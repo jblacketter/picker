@@ -516,7 +516,8 @@ Get a personalized response including:
 
 ### Deployment & Security
 - 🔒 [Security Checklist](docs/security-checklist.md) - **READ BEFORE PRODUCTION** - Critical security requirements
-- 🐧 [Linux Production Deployment](docs/linux-production-deployment.md) - Complete production setup guide for Ubuntu/Linux
+- 🐧 [Linux Production Deployment (Nginx)](docs/linux-production-deployment.md) - Complete production setup guide for Ubuntu/Linux with Nginx
+- 🌐 [Apache Production Deployment](docs/apache-production-deployment.md) - Production setup guide for Apache web server
 - 📋 `.env.production.example` - Production environment configuration template
 
 ## Contributing
