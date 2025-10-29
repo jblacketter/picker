@@ -111,3 +111,27 @@ For most investors, a diversified portfolio including both stocks (for growth) a
             request_id="stub-request-validate",
             success=True
         )
+
+    def analyze_stock_opportunity(self, prompt: str) -> ClaudeResponse:
+        """Return fixed stock analysis for development"""
+        # Parse symbol from prompt if possible (simple heuristic)
+        import re
+        symbol_match = re.search(r'Symbol:\s*(\w+)', prompt)
+        symbol = symbol_match.group(1) if symbol_match else "STOCK"
+
+        analysis = {
+            "analysis": f"The recent news suggests a potential trading opportunity for {symbol}. The price movement appears to be driven by the reported catalyst. Consider waiting for market open volatility to settle before entering, and watch for volume confirmation of the move.",
+            "sentiment": "bullish"
+        }
+
+        return ClaudeResponse(
+            content=json.dumps(analysis),
+            token_usage=TokenUsage(
+                prompt_tokens=200,
+                completion_tokens=100,
+                total_tokens=300,
+                model="stub"
+            ),
+            request_id="stub-request-analyze",
+            success=True
+        )

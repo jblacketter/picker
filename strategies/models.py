@@ -24,7 +24,13 @@ class PreMarketMover(models.Model):
     news_url = models.URLField(blank=True)
     movement_percent = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
     pre_market_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    
+
+    # Volume Metrics (Phase 1: Essential Filters)
+    pre_market_volume = models.BigIntegerField(null=True, blank=True, help_text="Current pre-market volume")
+    average_volume = models.BigIntegerField(null=True, blank=True, help_text="3-month average volume (from yfinance)")
+    relative_volume_ratio = models.FloatField(null=True, blank=True, help_text="RVOL: Pre-market volume / Average volume")
+    spread_percent = models.FloatField(null=True, blank=True, help_text="Bid-ask spread percentage (liquidity indicator)")
+
     # AI Analysis
     ai_analysis = models.TextField(blank=True, help_text="AI-generated analysis of the opportunity")
     sentiment = models.CharField(max_length=20, blank=True, help_text="bullish, bearish, neutral")

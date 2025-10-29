@@ -78,3 +78,16 @@ class ClaudeClient(ABC):
             ClaudeResponse with validation result (boolean)
         """
         pass
+
+    @abstractmethod
+    def analyze_stock_opportunity(self, prompt: str) -> ClaudeResponse:
+        """
+        Analyze a stock trading opportunity based on news and price movement.
+
+        Args:
+            prompt: Full analysis prompt with stock details, news, and movement
+
+        Returns:
+            ClaudeResponse with analysis and sentiment in JSON format
+        """
+        pass

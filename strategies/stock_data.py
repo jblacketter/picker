@@ -24,6 +24,11 @@ class StockData:
         self.pre_market_volume = data.get('preMarketVolume', 0)
         self.market_cap = data.get('marketCap')
 
+        # Phase 1: Volume Metrics
+        self.average_volume = data.get('averageVolume')  # yfinance 3-month average volume
+        self.bid = data.get('bid')
+        self.ask = data.get('ask')
+
     @property
     def has_pre_market_data(self) -> bool:
         """Check if stock has pre-market data available"""
@@ -43,6 +48,31 @@ class StockData:
         """Get the most relevant price (pre-market if available, else current)"""
         return self.pre_market_price or self.current_price
 
+    @property
+    def relative_volume_ratio(self) -> Optional[float]:
+        """
+        Calculate RVOL: Current volume / Average volume
+        >3.0 indicates strong conviction, <1.0 indicates weak interest
+        """
+        if self.average_volume and self.average_volume > 0:
+            current_vol = self.pre_market_volume if self.pre_market_volume > 0 else self.regular_market_volume
+            if current_vol > 0:
+                return current_vol / self.average_volume
+        return None
+
+    @property
+    def spread_percent(self) -> Optional[float]:
+        """
+        Calculate bid-ask spread as percentage of mid-price
+        <1% is good liquidity, >2% may indicate illiquid stock
+        """
+        if self.bid and self.ask and self.bid > 0:
+            mid_price = (self.bid + self.ask) / 2
+            if mid_price > 0:
+                spread = self.ask - self.bid
+                return (spread / mid_price) * 100
+        return None
+
     def to_dict(self) -> Dict:
         """Convert to dictionary for JSON serialization"""
         return {
@@ -54,6 +84,11 @@ class StockData:
             'volume': self.pre_market_volume or self.regular_market_volume,
             'market_cap': self.market_cap,
             'has_pre_market': self.has_pre_market_data,
+            # Phase 1: Volume Metrics
+            'pre_market_volume': self.pre_market_volume,
+            'average_volume': self.average_volume,
+            'relative_volume_ratio': round(self.relative_volume_ratio, 2) if self.relative_volume_ratio else None,
+            'spread_percent': round(self.spread_percent, 3) if self.spread_percent else None,
         }
 
 

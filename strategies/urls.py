@@ -9,4 +9,6 @@ urlpatterns = [
     path('pre-market-movers/scan/', views.scan_movers, name='scan_movers'),
     path('pre-market-movers/quick-add/', views.quick_add_mover, name='quick_add_mover'),
     path('pre-market-movers/<int:mover_id>/research/', views.research_mover, name='research_mover'),
+    path('pre-market-movers/<int:mover_id>/delete/', views.delete_mover, name='delete_mover'),
+    path('pre-market-movers/delete-all/', views.delete_all_movers, name='delete_all_movers'),
 ]

@@ -155,6 +155,46 @@ Respond with ONLY a JSON object in this format:
                 error_message=f"Unexpected error: {str(e)}"
             )
 
+    def analyze_stock_opportunity(self, prompt: str) -> ClaudeResponse:
+        """Analyze a stock trading opportunity using Haiku (fast analysis)"""
+        try:
+            logger.debug(f"Analyzing stock opportunity...")
+
+            response = self.client.messages.create(
+                model=self.fast_model,
+                max_tokens=2048,
+                messages=[{"role": "user", "content": prompt}]
+            )
+
+            return ClaudeResponse(
+                content=response.content[0].text,
+                token_usage=TokenUsage(
+                    prompt_tokens=response.usage.input_tokens,
+                    completion_tokens=response.usage.output_tokens,
+                    total_tokens=response.usage.input_tokens + response.usage.output_tokens,
+                    model=self.fast_model
+                ),
+                request_id=response.id,
+                success=True
+            )
+
+        except anthropic.APIError as e:
+            logger.error(f"Anthropic API error in analyze_stock_opportunity: {str(e)}")
+            return ClaudeResponse(
+                content="",
+                token_usage=TokenUsage(0, 0, 0, self.fast_model),
+                success=False,
+                error_message=str(e)
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error in analyze_stock_opportunity: {str(e)}")
+            return ClaudeResponse(
+                content="",
+                token_usage=TokenUsage(0, 0, 0, self.fast_model),
+                success=False,
+                error_message=f"Unexpected error: {str(e)}"
+            )
+
     def _build_clarification_prompt(self, question: str) -> str:
         """Build prompt for clarification generation"""
         return f"""You are an investment research assistant. A user has asked:

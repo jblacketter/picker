@@ -159,6 +159,10 @@ LOGOUT_REDIRECT_URL = 'core:login'
 USE_STUB_AI = config('USE_STUB_AI', default=True, cast=bool)
 ANTHROPIC_API_KEY = config('ANTHROPIC_API_KEY', default='')
 
+# Market Data API Configuration
+FINNHUB_API_KEY = config('FINNHUB_API_KEY', default='')
+FMP_API_KEY = config('FMP_API_KEY', default='')  # Financial Modeling Prep
+
 # Token Usage Limits (optional)
 MAX_TOKENS_PER_DAY = config('MAX_TOKENS_PER_DAY', default=None, cast=lambda x: int(x) if x else None)
 MAX_COST_PER_DAY = config('MAX_COST_PER_DAY', default=None, cast=lambda x: float(x) if x else None)

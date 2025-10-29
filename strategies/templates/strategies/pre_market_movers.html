@@ -1,92 +1,209 @@
 {% extends 'base.html' %}
+{% load stock_filters %}
 
 {% block title %}Pre-Market Movers - Picker{% endblock %}
 
 {% block content %}
 <div class="max-w-7xl mx-auto">
     <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Pre-Market Movers</h1>
-        <p class="text-gray-600 mt-2">Track stocks with significant pre-market or after-hours activity driven by news.</p>
-        <p class="text-sm text-gray-500 mt-1">
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Pre-Market Movers</h1>
+        <p class="text-lg text-gray-600 dark:text-gray-300 mt-2">Track stocks with significant pre-market or after-hours activity driven by news.</p>
+        <p class="text-base text-gray-500 dark:text-gray-400 mt-1">
             <strong>Strategy:</strong> Identify news-driven movers, research opportunity, buy at market open, sell on upward momentum.
         </p>
     </div>
 
     <!-- Discovery Scanner Section -->
-    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg shadow-md p-6 mb-6">
-        <h2 class="text-xl font-semibold text-gray-900 mb-3 flex items-center">
-            <svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+            <svg class="w-6 h-6 mr-2 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
             </svg>
             Discover Pre-Market Movers
         </h2>
-        <p class="text-sm text-gray-700 mb-4">
-            Get real-time price and volume data for stocks. Enter symbols to see which ones are moving.
+        <p class="text-base text-gray-700 dark:text-gray-300 mb-4">
+            Scan 410 stocks across major indices, sectors, and ETFs to find the biggest movers (±2.5% or more).
         </p>
 
-        <form method="post" action="{% url 'strategies:scan_movers' %}" class="space-y-4">
+        <form method="post" action="{% url 'strategies:scan_movers' %}" id="scanForm" class="space-y-4">
             {% csrf_token %}
+            <input type="hidden" name="discovery_mode" value="true">
 
-            <div class="bg-white rounded-lg p-4 border border-gray-200">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Enter stock symbols to scan (comma-separated)
-                </label>
-                <textarea
-                    name="symbols_to_scan"
-                    rows="3"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                    placeholder="AAPL, TSLA, NVDA, AMD, META, GOOGL, MSFT, AMZN"
-                >{{ symbols_to_scan }}</textarea>
-                <button
-                    type="submit"
-                    class="mt-3 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition duration-200"
-                >
-                    Scan for Movers
-                </button>
+            <!-- Filters Section -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <!-- Universe Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Market Universe
+                        </label>
+                        <select
+                            name="universe"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        >
+                            <option value="comprehensive" {% if scan_filters.universe == 'comprehensive' or not scan_filters.universe %}selected{% endif %}>Comprehensive (410 stocks)</option>
+                            <option value="sp500" {% if scan_filters.universe == 'sp500' %}selected{% endif %}>S&P 500 Top 200</option>
+                            <option value="nasdaq" {% if scan_filters.universe == 'nasdaq' %}selected{% endif %}>NASDAQ 100</option>
+                            <option value="all" {% if scan_filters.universe == 'all' %}selected{% endif %}>All Universe (488 stocks)</option>
+                        </select>
+                    </div>
+
+                    <!-- Threshold Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Min % Change
+                        </label>
+                        <select
+                            name="threshold"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        >
+                            <option value="1.0" {% if scan_filters.threshold == 1.0 %}selected{% endif %}>±1.0% (More results)</option>
+                            <option value="2.5" {% if scan_filters.threshold == 2.5 or not scan_filters.threshold %}selected{% endif %}>±2.5% (Recommended)</option>
+                            <option value="5.0" {% if scan_filters.threshold == 5.0 %}selected{% endif %}>±5.0% (Strong movers)</option>
+                            <option value="10.0" {% if scan_filters.threshold == 10.0 %}selected{% endif %}>±10.0% (Extreme movers)</option>
+                        </select>
+                    </div>
+
+                    <!-- RVOL Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Min RVOL
+                        </label>
+                        <select
+                            name="min_rvol"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        >
+                            <option value="0" {% if scan_filters.min_rvol == 0 or not scan_filters.min_rvol %}selected{% endif %}>Any volume</option>
+                            <option value="1.5" {% if scan_filters.min_rvol == 1.5 %}selected{% endif %}>1.5x+ (Above average)</option>
+                            <option value="2.0" {% if scan_filters.min_rvol == 2.0 %}selected{% endif %}>2.0x+ (High conviction)</option>
+                            <option value="3.0" {% if scan_filters.min_rvol == 3.0 %}selected{% endif %}>3.0x+ (Strong conviction)</option>
+                        </select>
+                    </div>
+
+                    <!-- Spread Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Max Spread
+                        </label>
+                        <select
+                            name="max_spread"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        >
+                            <option value="999" {% if scan_filters.max_spread == 999 or not scan_filters.max_spread %}selected{% endif %}>Any spread</option>
+                            <option value="1.0" {% if scan_filters.max_spread == 1.0 %}selected{% endif %}>< 1.0% (Liquid)</option>
+                            <option value="2.0" {% if scan_filters.max_spread == 2.0 %}selected{% endif %}>< 2.0% (Tradeable)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Scan Button -->
+                <div class="flex items-center justify-between">
+                    <div>
+                        <button
+                            type="submit"
+                            id="scanButton"
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition duration-200 shadow-lg hover:shadow-xl flex items-center"
+                        >
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            <span id="scanButtonText">Scan for Movers</span>
+                        </button>
+                        <!-- Loading Indicator -->
+                        <div id="loadingIndicator" class="hidden mt-3 flex items-center text-blue-600 dark:text-blue-400">
+                            <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span class="font-medium">Scanning market... This may take 30-60 seconds</span>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        Adjust filters to refine your scan
+                    </p>
+                </div>
             </div>
         </form>
 
+        <script>
+        document.getElementById('scanForm').addEventListener('submit', function() {
+            document.getElementById('scanButton').disabled = true;
+            document.getElementById('scanButtonText').textContent = 'Scanning...';
+            document.getElementById('loadingIndicator').classList.remove('hidden');
+        });
+        </script>
+
         <!-- Scan Results -->
         {% if scan_results %}
-        <div class="mt-6 bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
-                <h3 class="font-semibold text-gray-900">Market Data ({{ scan_results|length }} stocks)</h3>
-                <p class="text-xs text-gray-600 mt-1">Sorted by biggest movers</p>
+        <div class="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 border-b border-gray-200 dark:border-gray-600 flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Market Data ({{ scan_results|length }} stocks)</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Sorted by biggest movers</p>
+                </div>
+                {% if scan_timestamp %}
+                <div class="text-right">
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Updated at</p>
+                    <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ scan_timestamp|date:"g:i A" }}</p>
+                </div>
+                {% endif %}
             </div>
 
             <!-- Table view for price/volume data -->
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead class="bg-gray-50 dark:bg-gray-700">
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Symbol</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Change</th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Volume</th>
-                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Pre-Market</th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Symbol</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Company</th>
+                            <th class="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Price</th>
+                            <th class="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Change</th>
+                            <th class="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Volume</th>
+                            <th class="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">RVOL</th>
+                            <th class="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Spread</th>
+                            <th class="px-4 py-3 text-center text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pre-Market</th>
+                            <th class="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Action</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                         {% for result in scan_results %}
-                        <tr class="hover:bg-gray-50 transition">
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                             <td class="px-4 py-3 whitespace-nowrap">
-                                <span class="text-sm font-bold text-gray-900">{{ result.symbol }}</span>
+                                <span class="text-base font-bold text-gray-900 dark:text-gray-100">{{ result.symbol }}</span>
                             </td>
                             <td class="px-4 py-3">
-                                <span class="text-sm text-gray-700">{{ result.company_name|truncatewords:4 }}</span>
+                                <span class="text-base text-gray-700 dark:text-gray-300">{{ result.company_name|truncatewords:4 }}</span>
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap text-right">
-                                <span class="text-sm font-medium text-gray-900">{{ result.current_price }}</span>
+                                <span class="text-base font-medium text-gray-900 dark:text-gray-100">{{ result.current_price }}</span>
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap text-right">
-                                <span class="text-sm font-semibold {% if result.change_percent_raw > 0 %}text-green-600{% elif result.change_percent_raw < 0 %}text-red-600{% else %}text-gray-600{% endif %}">
+                                <span class="text-base font-semibold {% if result.change_percent_raw > 0 %}text-green-600 dark:text-green-400{% elif result.change_percent_raw < 0 %}text-red-600 dark:text-red-400{% else %}text-gray-600 dark:text-gray-400{% endif %}">
                                     {{ result.change_percent }}
                                 </span>
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap text-right">
-                                <span class="text-sm text-gray-700">{{ result.volume }}</span>
+                                <span class="text-base text-gray-700 dark:text-gray-300">{{ result.volume }}</span>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-right">
+                                {% if result.relative_volume_ratio %}
+                                <span class="text-base font-medium {% if result.relative_volume_ratio >= 3.0 %}text-orange-600 dark:text-orange-400{% elif result.relative_volume_ratio >= 2.0 %}text-yellow-600 dark:text-yellow-400{% else %}text-gray-700 dark:text-gray-300{% endif %}">
+                                    {{ result.relative_volume_ratio|floatformat:2 }}x
+                                    {% if result.relative_volume_ratio >= 3.0 %}🔥{% elif result.relative_volume_ratio >= 2.0 %}⚡{% endif %}
+                                </span>
+                                {% else %}
+                                <span class="text-sm text-gray-400">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-right">
+                                {% if result.spread_percent %}
+                                <span class="text-base {% if result.spread_percent > 2.0 %}text-red-600 dark:text-red-400{% elif result.spread_percent > 1.0 %}text-yellow-600 dark:text-yellow-400{% else %}text-green-600 dark:text-green-400{% endif %}">
+                                    {{ result.spread_percent|floatformat:3 }}%
+                                    {% if result.spread_percent > 2.0 %}⚠️{% endif %}
+                                </span>
+                                {% else %}
+                                <span class="text-sm text-gray-400">—</span>
+                                {% endif %}
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap text-center">
                                 {% if result.has_pre_market %}
@@ -106,7 +223,7 @@
                                     <input type="hidden" name="change_percent" value="{{ result.change_percent }}">
                                     <button
                                         type="submit"
-                                        class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium py-1.5 px-3 rounded transition duration-200"
+                                        class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-1.5 px-3 rounded transition duration-200"
                                     >
                                         + Track
                                     </button>
@@ -122,10 +239,10 @@
     </div>
 
     <!-- Manual Add Mover Form -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6 border border-gray-200 dark:border-gray-700">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
             Manually Add Pre-Market Mover
-            <span class="text-sm font-normal text-gray-500 ml-2">(or use scanner above)</span>
+            <span class="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">(or use scanner above)</span>
         </h2>
         <form method="post" action="{% url 'strategies:add_mover' %}" class="space-y-4">
             {% csrf_token %}
@@ -215,68 +332,113 @@
         </form>
     </div>
 
-    <!-- Filter Tabs -->
-    <div class="mb-6 border-b border-gray-200">
-        <nav class="-mb-px flex space-x-8">
-            <a href="?status=all" class="{% if not status_filter or status_filter == 'all' %}border-blue-500 text-blue-600{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-                All ({{ movers.count }})
-            </a>
-            <a href="?status=identified" class="{% if status_filter == 'identified' %}border-blue-500 text-blue-600{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-                Identified
-            </a>
-            <a href="?status=researching" class="{% if status_filter == 'researching' %}border-blue-500 text-blue-600{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-                Researching
-            </a>
-            <a href="?status=ready" class="{% if status_filter == 'ready' %}border-blue-500 text-blue-600{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-                Ready to Trade
-            </a>
-            <a href="?status=executed" class="{% if status_filter == 'executed' %}border-blue-500 text-blue-600{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-                Executed
-            </a>
-        </nav>
+    <!-- Filter Tabs and Bulk Actions -->
+    <div class="mb-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Your Tracked Movers</h2>
+            {% if movers.count > 0 %}
+            <form method="post" action="{% url 'strategies:delete_all_movers' %}" onsubmit="return confirm('Are you sure you want to delete all {{ movers.count }} tracked movers? This cannot be undone.');">
+                {% csrf_token %}
+                <button
+                    type="submit"
+                    class="bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition duration-200"
+                >
+                    🗑️ Delete All ({{ movers.count }})
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        <div class="border-b border-gray-200 dark:border-gray-700">
+            <nav class="-mb-px flex space-x-8">
+                <a href="?status=all" class="{% if not status_filter or status_filter == 'all' %}border-blue-500 text-blue-600 dark:text-blue-400{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                    All ({{ movers.count }})
+                </a>
+                <a href="?status=identified" class="{% if status_filter == 'identified' %}border-blue-500 text-blue-600 dark:text-blue-400{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                    Identified
+                </a>
+                <a href="?status=researching" class="{% if status_filter == 'researching' %}border-blue-500 text-blue-600 dark:text-blue-400{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                    Researching
+                </a>
+                <a href="?status=ready" class="{% if status_filter == 'ready' %}border-blue-500 text-blue-600 dark:text-blue-400{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                    Ready to Trade
+                </a>
+                <a href="?status=executed" class="{% if status_filter == 'executed' %}border-blue-500 text-blue-600 dark:text-blue-400{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                    Executed
+                </a>
+            </nav>
+        </div>
     </div>
 
     <!-- Movers List -->
     {% if movers %}
     <div class="space-y-4">
         {% for mover in movers %}
-        <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition duration-200">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition duration-200 border border-gray-200 dark:border-gray-700">
             <div class="flex justify-between items-start mb-4">
                 <div class="flex-1">
                     <div class="flex items-center space-x-3 mb-2">
-                        <h3 class="text-2xl font-bold text-gray-900">{{ mover.symbol }}</h3>
+                        <h3 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ mover.symbol }}</h3>
                         {% if mover.company_name %}
-                        <span class="text-gray-600">{{ mover.company_name }}</span>
+                        <span class="text-gray-600 dark:text-gray-400">{{ mover.company_name }}</span>
                         {% endif %}
                         {% if mover.movement_percent %}
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium
-                            {% if mover.movement_percent > 0 %}bg-green-100 text-green-800
-                            {% else %}bg-red-100 text-red-800{% endif %}">
+                            {% if mover.movement_percent > 0 %}bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300
+                            {% else %}bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300{% endif %}">
                             {% if mover.movement_percent > 0 %}+{% endif %}{{ mover.movement_percent }}%
                         </span>
                         {% endif %}
                     </div>
 
+                    <!-- Phase 1: Volume Metrics -->
+                    {% if mover.relative_volume_ratio or mover.spread_percent or mover.pre_market_volume %}
+                    <div class="flex flex-wrap gap-2 mb-3">
+                        {% if mover.relative_volume_ratio %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded text-sm font-medium
+                            {% if mover.relative_volume_ratio >= 3.0 %}bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300
+                            {% elif mover.relative_volume_ratio >= 2.0 %}bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300
+                            {% else %}bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300{% endif %}">
+                            RVOL: {{ mover.relative_volume_ratio|floatformat:2 }}x
+                            {% if mover.relative_volume_ratio >= 3.0 %}🔥{% elif mover.relative_volume_ratio >= 2.0 %}⚡{% endif %}
+                        </span>
+                        {% endif %}
+                        {% if mover.spread_percent %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded text-sm font-medium
+                            {% if mover.spread_percent > 2.0 %}bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300
+                            {% elif mover.spread_percent > 1.0 %}bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300
+                            {% else %}bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300{% endif %}">
+                            Spread: {{ mover.spread_percent|floatformat:3 }}%
+                            {% if mover.spread_percent > 2.0 %}⚠️{% endif %}
+                        </span>
+                        {% endif %}
+                        {% if mover.pre_market_volume %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded text-sm font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
+                            Vol: {{ mover.pre_market_volume|format_volume }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
                     <div class="mb-3">
-                        <p class="text-gray-800 font-medium">{{ mover.news_headline }}</p>
+                        <p class="text-base text-gray-800 dark:text-gray-200 font-medium">{{ mover.news_headline }}</p>
                         {% if mover.news_source %}
-                        <p class="text-sm text-gray-500 mt-1">Source: {{ mover.news_source }}</p>
+                        <p class="text-base text-gray-500 dark:text-gray-400 mt-1">Source: {{ mover.news_source }}</p>
                         {% endif %}
                         {% if mover.news_url %}
-                        <a href="{{ mover.news_url }}" target="_blank" class="text-sm text-blue-600 hover:text-blue-700">
+                        <a href="{{ mover.news_url }}" target="_blank" class="text-base text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
                             Read article ↗
                         </a>
                         {% endif %}
                     </div>
 
                     {% if mover.ai_analysis %}
-                    <div class="bg-blue-50 border-l-4 border-blue-600 p-4 mb-3">
-                        <h4 class="text-sm font-semibold text-blue-900 mb-1">AI Analysis:</h4>
-                        <p class="text-sm text-gray-800">{{ mover.ai_analysis }}</p>
+                    <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-600 dark:border-blue-500 p-4 mb-3">
+                        <h4 class="text-base font-semibold text-blue-900 dark:text-blue-300 mb-1">AI Analysis:</h4>
+                        <p class="text-base text-gray-800 dark:text-gray-200">{{ mover.ai_analysis }}</p>
                         {% if mover.sentiment %}
-                        <p class="text-sm font-medium mt-2">
+                        <p class="text-base font-medium mt-2">
                             Sentiment:
-                            <span class="{% if mover.sentiment == 'bullish' %}text-green-600{% elif mover.sentiment == 'bearish' %}text-red-600{% else %}text-gray-600{% endif %}">
+                            <span class="{% if mover.sentiment == 'bullish' %}text-green-600 dark:text-green-400{% elif mover.sentiment == 'bearish' %}text-red-600 dark:text-red-400{% else %}text-gray-600 dark:text-gray-400{% endif %}">
                                 {{ mover.sentiment|title }}
                             </span>
                         </p>
@@ -319,20 +481,34 @@
                     <span class="text-sm text-gray-500">{{ mover.trade_date|date:"M d, Y" }}</span>
 
                     {% if not mover.ai_analysis %}
-                    <form method="post" action="{% url 'strategies:research_mover' mover.id %}" class="inline">
+                    <form method="post" action="{% url 'strategies:research_mover' mover.id %}" class="research-form-{{ mover.id }}">
                         {% csrf_token %}
                         <button
                             type="submit"
-                            class="text-sm bg-green-600 hover:bg-green-700 text-white font-medium py-1.5 px-3 rounded transition duration-200"
+                            class="research-button text-sm bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-1.5 px-3 rounded transition duration-200 inline-flex items-center"
                         >
-                            Research This
+                            <svg class="spinner-icon hidden animate-spin h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span class="button-text">Research This</span>
                         </button>
                     </form>
                     {% endif %}
 
-                    <a href="/admin/strategies/premarketmover/{{ mover.id }}/change/" class="text-sm text-blue-600 hover:text-blue-700">
+                    <a href="/admin/strategies/premarketmover/{{ mover.id }}/change/" class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
                         Edit Details
                     </a>
+
+                    <form method="post" action="{% url 'strategies:delete_mover' mover.id %}" class="inline" onsubmit="return confirm('Delete {{ mover.symbol }}?');">
+                        {% csrf_token %}
+                        <button
+                            type="submit"
+                            class="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium"
+                        >
+                            🗑️ Delete
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -349,4 +525,32 @@
     </div>
     {% endif %}
 </div>
+
+<script>
+// Handle research button loading state
+document.addEventListener('DOMContentLoaded', function() {
+    // Find all research forms
+    const forms = document.querySelectorAll('[class^="research-form-"]');
+
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const button = this.querySelector('.research-button');
+            const spinner = button.querySelector('.spinner-icon');
+            const text = button.querySelector('.button-text');
+
+            // Disable button and show loading state
+            button.disabled = true;
+            button.classList.add('bg-gray-400');
+            button.classList.remove('bg-green-600', 'hover:bg-green-700');
+
+            if (spinner) {
+                spinner.classList.remove('hidden');
+            }
+            if (text) {
+                text.textContent = 'Researching...';
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

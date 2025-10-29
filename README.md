@@ -18,11 +18,12 @@ Unlike existing financial platforms, Picker is:
 - Get AI-generated advice with curated resource links
 - Save complete research sessions
 
-✅ **Pre-Market Movers Scanner**
+✅ **Pre-Market Movers Scanner** 🆕
 - Real-time stock price and volume data (via yfinance)
+- **Automated news fetching** (via Finnhub API)
 - Scan symbols to find biggest movers
-- One-click tracking from scan results
-- AI-powered news research for drill-down analysis
+- One-click tracking from scan results with auto-populated news
+- AI-powered analysis with real news context
 - Status workflow: identified → researching → ready → executed
 
 ✅ **Research Session Management**
@@ -46,7 +47,7 @@ Unlike existing financial platforms, Picker is:
 - **Frontend:** Django Templates + Tailwind CSS (MVP)
 - **Database:** SQLite (development), PostgreSQL (production-ready)
 - **AI:** Anthropic Claude API (Haiku for clarifications, Sonnet for responses)
-- **Market Data:** yfinance (Yahoo Finance API wrapper)
+- **Market Data:** yfinance (real-time quotes), Finnhub API (news & market status)
 - **Deployment:** Local-first (development server)
 
 ## Quick Start
@@ -56,6 +57,7 @@ Unlike existing financial platforms, Picker is:
 - Python 3.11+ ([Download](https://www.python.org/downloads/))
 - Git ([Download](https://git-scm.com/downloads))
 - Anthropic API key ([Get one](https://console.anthropic.com/))
+- Finnhub API key - Free tier ([Get one](https://finnhub.io/))
 
 ### macOS Setup
 
