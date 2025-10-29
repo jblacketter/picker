@@ -1,7 +1,9 @@
 from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
 from .models import WatchlistItem
 
 
+@login_required
 def watchlist(request):
     """Display stock watchlist"""
     status_filter = request.GET.get('status', 'all')
@@ -17,6 +19,7 @@ def watchlist(request):
     })
 
 
+@login_required
 def add_to_watchlist(request):
     """Add a stock to the watchlist"""
     if request.method != 'POST':

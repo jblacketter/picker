@@ -20,6 +20,7 @@ from django.urls import path, include
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("accounts/", include("core.urls")),  # Authentication
     path("", include("research.urls")),  # Research app at root
     path("watchlist/", include("stocks.urls")),  # Stocks watchlist
     path("strategies/", include("strategies.urls")),  # Trading strategies

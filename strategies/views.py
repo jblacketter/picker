@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from .models import PreMarketMover
 from ai_service.client_factory import get_claude_client
@@ -11,6 +12,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+@login_required
 def pre_market_movers(request):
     """Display pre-market movers with filtering"""
     status_filter = request.GET.get('status', 'all')
@@ -32,6 +34,7 @@ def pre_market_movers(request):
     })
 
 
+@login_required
 def add_mover(request):
     """Add a new pre-market mover"""
     if request.method != 'POST':
@@ -124,6 +127,7 @@ Respond in JSON format:
         logger.error(f"Failed to get AI analysis for mover {mover.id}: {response.error_message}")
 
 
+@login_required
 def scan_movers(request):
     """Scan for pre-market movers using real market data"""
     if request.method != 'POST':
@@ -168,6 +172,7 @@ def scan_movers(request):
     return redirect('strategies:pre_market_movers')
 
 
+@login_required
 def quick_add_mover(request):
     """Quick-add a mover from scan results"""
     if request.method != 'POST':
@@ -204,6 +209,7 @@ def quick_add_mover(request):
     return redirect('strategies:pre_market_movers')
 
 
+@login_required
 def research_mover(request, mover_id):
     """Get AI analysis for an existing mover"""
     if request.method != 'POST':

@@ -146,6 +146,11 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Authentication settings
+LOGIN_URL = 'core:login'
+LOGIN_REDIRECT_URL = 'research:home'
+LOGOUT_REDIRECT_URL = 'core:login'
+
 # ==============================================================================
 # PICKER APP SETTINGS
 # ==============================================================================

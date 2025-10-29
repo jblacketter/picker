@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from .models import (
     ResearchSession,
     ClarificationQuestion,
@@ -25,6 +26,7 @@ def home(request):
     })
 
 
+@login_required
 def ask_question(request):
     """Handle question submission and generate clarifications"""
     if request.method != 'POST':
@@ -87,6 +89,7 @@ def ask_question(request):
     return redirect('research:clarifications', session_id=session.id)
 
 
+@login_required
 def clarifications(request, session_id):
     """Display clarification questions"""
     session = get_object_or_404(ResearchSession, id=session_id)
@@ -98,6 +101,7 @@ def clarifications(request, session_id):
     })
 
 
+@login_required
 def submit_clarifications(request, session_id):
     """Handle clarification responses and generate research"""
     if request.method != 'POST':
@@ -185,6 +189,7 @@ def submit_clarifications(request, session_id):
     return redirect('research:session_detail', session_id=session.id)
 
 
+@login_required
 def session_detail(request, session_id):
     """Display session and response"""
     session = get_object_or_404(ResearchSession, id=session_id)
@@ -202,6 +207,7 @@ def session_detail(request, session_id):
     })
 
 
+@login_required
 def session_list(request):
     """List all research sessions"""
     sessions = ResearchSession.objects.all()
@@ -210,6 +216,7 @@ def session_list(request):
     })
 
 
+@login_required
 def add_note(request, session_id):
     """Add a note to a research session"""
     if request.method != 'POST':
