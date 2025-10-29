@@ -28,12 +28,37 @@ def pre_market_movers(request):
     scan_filters = request.session.get('scan_filters', {})
     scan_timestamp = request.session.get('scan_timestamp', None)
 
+    # Get API toggle state (default: disabled for safety)
+    api_enabled = request.session.get('api_enabled', False)
+    logger.info(f"Pre-market movers view loaded: api_enabled={api_enabled}, session_key={request.session.session_key}")
+
+    # Pagination for scan results
+    paginated_results = None
+    page_info = None
+    if scan_results:
+        from django.core.paginator import Paginator
+        page_number = request.GET.get('page', 1)
+        paginator = Paginator(scan_results, 50)  # 50 results per page
+        page_obj = paginator.get_page(page_number)
+        paginated_results = page_obj.object_list
+        page_info = {
+            'current': page_obj.number,
+            'total_pages': paginator.num_pages,
+            'total_results': paginator.count,
+            'has_next': page_obj.has_next(),
+            'has_previous': page_obj.has_previous(),
+            'start_index': page_obj.start_index(),
+            'end_index': page_obj.end_index(),
+        }
+
     return render(request, 'strategies/pre_market_movers.html', {
         'movers': movers,
         'status_filter': status_filter,
-        'scan_results': scan_results,
+        'scan_results': paginated_results,
+        'page_info': page_info,
         'scan_filters': scan_filters,
         'scan_timestamp': scan_timestamp,
+        'api_enabled': api_enabled,
     })
 
 
@@ -244,6 +269,10 @@ def scan_movers(request):
 
         # Store results and filters in session (persistent across page loads)
         from django.utils import timezone
+
+        # Preserve api_enabled state explicitly
+        api_enabled = request.session.get('api_enabled', False)
+
         request.session['scan_results'] = results
         request.session['scan_filters'] = {
             'universe': universe_name,
@@ -252,7 +281,10 @@ def scan_movers(request):
             'max_spread': max_spread,
         }
         request.session['scan_timestamp'] = timezone.now().isoformat()
+        request.session['api_enabled'] = api_enabled  # Explicitly preserve
         request.session.modified = True  # Force session save
+
+        logger.info(f"Scan complete: {len(results)} results, api_enabled={api_enabled}, session_key={request.session.session_key}")
 
     except Exception as e:
         logger.error(f"Error scanning movers: {str(e)}")
@@ -380,3 +412,89 @@ def delete_all_movers(request):
     logger.info(f"Deleted all {count} movers")
 
     return redirect('strategies:pre_market_movers')
+
+
+@login_required
+def toggle_api(request):
+    """Toggle API usage on/off (session-based)"""
+    if request.method != 'POST':
+        return redirect('strategies:pre_market_movers')
+
+    current_state = request.session.get('api_enabled', False)
+    new_state = not current_state
+    request.session['api_enabled'] = new_state
+    request.session.modified = True
+
+    # Force session save
+    request.session.save()
+
+    logger.info(f"API usage toggled from {current_state} to {new_state}, session key: {request.session.session_key}")
+    return redirect('strategies:pre_market_movers')
+
+
+@login_required
+def api_usage(request):
+    """Display API token usage statistics"""
+    from ai_service.models import TokenUsageLog
+    from django.db.models import Sum, Count
+    from django.utils import timezone
+    from datetime import timedelta
+
+    # Get all logs
+    all_logs = TokenUsageLog.objects.all().order_by('-timestamp')
+
+    # Calculate totals
+    total_stats = TokenUsageLog.objects.aggregate(
+        total_tokens=Sum('total_tokens'),
+        total_requests=Count('id'),
+        total_prompt_tokens=Sum('prompt_tokens'),
+        total_completion_tokens=Sum('completion_tokens'),
+    )
+
+    # Today's stats
+    today = timezone.now().date()
+    today_stats = TokenUsageLog.objects.filter(
+        timestamp__date=today
+    ).aggregate(
+        total_tokens=Sum('total_tokens'),
+        total_requests=Count('id'),
+    )
+
+    # This week's stats
+    week_ago = timezone.now() - timedelta(days=7)
+    week_stats = TokenUsageLog.objects.filter(
+        timestamp__gte=week_ago
+    ).aggregate(
+        total_tokens=Sum('total_tokens'),
+        total_requests=Count('id'),
+    )
+
+    # Cost estimates (using Sonnet pricing)
+    # $3 per 1M input tokens, $15 per 1M output tokens
+    total_cost = 0
+    if total_stats['total_prompt_tokens']:
+        total_cost += (total_stats['total_prompt_tokens'] / 1_000_000) * 3
+    if total_stats['total_completion_tokens']:
+        total_cost += (total_stats['total_completion_tokens'] / 1_000_000) * 15
+
+    today_cost = 0
+    if today_stats['total_tokens']:
+        # Rough estimate: assume 70% completion tokens
+        today_cost = (today_stats['total_tokens'] / 1_000_000) * 12
+
+    week_cost = 0
+    if week_stats['total_tokens']:
+        week_cost = (week_stats['total_tokens'] / 1_000_000) * 12
+
+    # Recent logs (last 50)
+    recent_logs = all_logs[:50]
+
+    return render(request, 'strategies/api_usage.html', {
+        'total_stats': total_stats,
+        'today_stats': today_stats,
+        'week_stats': week_stats,
+        'total_cost': total_cost,
+        'today_cost': today_cost,
+        'week_cost': week_cost,
+        'recent_logs': recent_logs,
+    })

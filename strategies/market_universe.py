@@ -164,8 +164,8 @@ SP500_NEXT_100 = [
 RUSSELL_2000_LIQUID = [
     # High-volume small caps
     'IWM', 'MARA', 'RIOT', 'SIRI', 'PLUG', 'F', 'SOFI', 'AAL', 'UAL', 'CCL',
-    'NCLH', 'RCL', 'SAVE', 'JBLU', 'DAL', 'LUV', 'ALK', 'HA', 'MESA', 'SKYW',
-    'BLNK', 'CHPT', 'EVGO', 'QS', 'ARVL', 'FFIE', 'MULN', 'ELMS', 'LEV', 'FSR',
+    'NCLH', 'RCL', 'JBLU', 'DAL', 'LUV', 'ALK', 'HA', 'MESA', 'SKYW',
+    'BLNK', 'CHPT', 'EVGO', 'QS', 'ARVL', 'ELMS',
     'RIG', 'HP', 'BTU', 'ARCH', 'CEIX', 'HCC', 'METC', 'HNRG', 'WTI', 'TALO',
 ]
 
@@ -183,7 +183,7 @@ FINTECH = [
 
 # Gaming & Entertainment
 GAMING = [
-    'EA', 'TTWO', 'ATVI', 'RBLX', 'U', 'DIS', 'NFLX', 'SPOT', 'WBD', 'PARA',
+    'EA', 'TTWO', 'ATVI', 'RBLX', 'U', 'DIS', 'NFLX', 'SPOT', 'WBD',
     'LYV', 'MSG', 'MSGS', 'DKNG', 'PENN', 'MGM', 'WYNN', 'LVS', 'CZR',
 ]
 
@@ -196,7 +196,7 @@ ECOMMERCE = [
 # Energy & Oil
 ENERGY_EXTENDED = [
     'XOM', 'CVX', 'COP', 'EOG', 'SLB', 'MPC', 'PSX', 'VLO', 'OXY', 'DVN',
-    'HAL', 'BKR', 'PXD', 'MRO', 'HES', 'APA', 'FANG', 'EQT', 'AR', 'CTRA',
+    'HAL', 'BKR', 'PXD', 'MRO', 'APA', 'FANG', 'EQT', 'AR', 'CTRA',
 ]
 
 

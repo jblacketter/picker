@@ -65,7 +65,7 @@ CONSERVATIVE_WATCHLIST = [
 # Popular meme stocks (use with caution)
 MEME_WATCHLIST = [
     'GME', 'AMC', 'BB', 'BBBY', 'TSLA',
-    'PLTR', 'WISH', 'CLOV', 'SPCE'
+    'PLTR', 'CLOV', 'SPCE'
 ]
 
 # Earnings season watchlist - update quarterly

@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block title %}API Usage - Picker{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">API Usage Dashboard</h1>
+        <p class="text-lg text-gray-600 dark:text-gray-300 mt-2">Monitor your Anthropic API token consumption and costs</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <!-- Today's Usage -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Today</h3>
+                <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+            </div>
+            <p class="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                {{ today_stats.total_tokens|default:0|floatformat:0 }}
+            </p>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">tokens used</p>
+            <p class="text-lg font-semibold text-green-600 dark:text-green-400 mt-2">
+                ${{ today_cost|floatformat:4 }}
+            </p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{ today_stats.total_requests|default:0 }} requests</p>
+        </div>
+
+        <!-- This Week's Usage -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Last 7 Days</h3>
+                <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                </svg>
+            </div>
+            <p class="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                {{ week_stats.total_tokens|default:0|floatformat:0 }}
+            </p>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">tokens used</p>
+            <p class="text-lg font-semibold text-green-600 dark:text-green-400 mt-2">
+                ${{ week_cost|floatformat:4 }}
+            </p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{ week_stats.total_requests|default:0 }} requests</p>
+        </div>
+
+        <!-- Total Usage -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">All Time</h3>
+                <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <p class="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                {{ total_stats.total_tokens|default:0|floatformat:0 }}
+            </p>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">tokens used</p>
+            <p class="text-lg font-semibold text-green-600 dark:text-green-400 mt-2">
+                ${{ total_cost|floatformat:4 }}
+            </p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{ total_stats.total_requests|default:0 }} requests</p>
+        </div>
+    </div>
+
+    <!-- Pricing Info -->
+    <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-600 dark:border-blue-500 p-4 mb-8">
+        <h3 class="text-base font-semibold text-blue-900 dark:text-blue-300 mb-2">Claude Sonnet Pricing</h3>
+        <div class="text-sm text-gray-800 dark:text-gray-200 space-y-1">
+            <p><strong>Input tokens:</strong> $3.00 per 1M tokens</p>
+            <p><strong>Output tokens:</strong> $15.00 per 1M tokens</p>
+            <p class="text-xs text-gray-600 dark:text-gray-400 mt-2">Costs are estimates based on Anthropic's published pricing. Actual costs may vary.</p>
+        </div>
+    </div>
+
+    <!-- Recent Requests -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Recent API Requests (Last 50)</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Timestamp</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Endpoint</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Model</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Input Tokens</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Output Tokens</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Est. Cost</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for log in recent_logs %}
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                            {{ log.timestamp|date:"M d, g:i A" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                            {{ log.endpoint }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                                {% if 'haiku' in log.model %}bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300
+                                {% elif 'sonnet' in log.model %}bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300
+                                {% else %}bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300{% endif %}">
+                                {{ log.model }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-700 dark:text-gray-300">
+                            {{ log.prompt_tokens|floatformat:0 }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-700 dark:text-gray-300">
+                            {{ log.completion_tokens|floatformat:0 }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900 dark:text-gray-100">
+                            {{ log.total_tokens|floatformat:0 }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-green-600 dark:text-green-400">
+                            ${{ log.cost_estimate|floatformat:4 }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <p class="mt-2">No API requests yet</p>
+                            <p class="text-sm">Enable AI Research and analyze some stocks to see usage here</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

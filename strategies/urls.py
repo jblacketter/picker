@@ -11,4 +11,6 @@ urlpatterns = [
     path('pre-market-movers/<int:mover_id>/research/', views.research_mover, name='research_mover'),
     path('pre-market-movers/<int:mover_id>/delete/', views.delete_mover, name='delete_mover'),
     path('pre-market-movers/delete-all/', views.delete_all_movers, name='delete_all_movers'),
+    path('pre-market-movers/toggle-api/', views.toggle_api, name='toggle_api'),
+    path('api-usage/', views.api_usage, name='api_usage'),
 ]
