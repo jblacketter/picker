@@ -162,6 +162,51 @@ python manage.py runserver
 - Administrator privileges may be required for some operations
 - Use forward slashes (`/`) or escaped backslashes (`\\`) in file paths within Python code
 
+### Linux/Ubuntu Setup
+
+```bash
+# 1. Update system
+sudo apt update && sudo apt upgrade -y
+
+# 2. Install dependencies
+sudo apt install -y python3.11 python3.11-venv python3-pip git
+
+# 3. Clone repository
+git clone https://github.com/jblacketter/picker.git
+cd picker
+
+# 4. Create virtual environment
+python3.11 -m venv .venv
+
+# 5. Activate virtual environment
+source .venv/bin/activate
+
+# 6. Install dependencies
+pip install -r requirements.txt
+
+# 7. Set up environment variables
+cp .env.example .env
+nano .env
+# Add your ANTHROPIC_API_KEY and save (Ctrl+X, Y, Enter)
+
+# 8. Run migrations
+python manage.py migrate
+
+# 9. Create superuser
+python manage.py createsuperuser
+
+# 10. Run development server
+python manage.py runserver
+
+# 11. Open browser to http://localhost:8000
+```
+
+**Linux Notes:**
+- For production deployment, see [Linux Production Deployment Guide](docs/linux-production-deployment.md)
+- Use `python3` or `python3.11` depending on your system
+- Virtual environment activation: `source .venv/bin/activate`
+- To deactivate: `deactivate`
+
 ## Environment Variables
 
 Create a `.env` file in the project root:
@@ -468,6 +513,11 @@ Get a personalized response including:
 - [Pre-Market Movers Guide](docs/pre-market-movers-guide.md) - Complete user guide for pre-market scanner
 - [Scanner Feature](docs/scanner-feature.md) - Technical details of the scanner implementation
 - [Claude Client Interface](docs/claude-client-interface.md) - AI abstraction layer design
+
+### Deployment & Security
+- 🔒 [Security Checklist](docs/security-checklist.md) - **READ BEFORE PRODUCTION** - Critical security requirements
+- 🐧 [Linux Production Deployment](docs/linux-production-deployment.md) - Complete production setup guide for Ubuntu/Linux
+- 📋 `.env.production.example` - Production environment configuration template
 
 ## Contributing
 
