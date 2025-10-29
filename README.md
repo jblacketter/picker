@@ -10,13 +10,20 @@ Unlike existing financial platforms, Picker is:
 - **Personal:** Save your research, add notes, return when ready
 - **AI-assisted:** Get clarifying questions and personalized responses
 
-## Features (MVP)
+## Features
 
 ✅ **Question-Based Research**
 - Ask any investment question
 - Receive clarifying questions to understand your context
 - Get AI-generated advice with curated resource links
 - Save complete research sessions
+
+✅ **Pre-Market Movers Scanner**
+- Real-time stock price and volume data (via yfinance)
+- Scan symbols to find biggest movers
+- One-click tracking from scan results
+- AI-powered news research for drill-down analysis
+- Status workflow: identified → researching → ready → executed
 
 ✅ **Research Session Management**
 - View all saved sessions
@@ -30,15 +37,16 @@ Unlike existing financial platforms, Picker is:
 
 ✅ **Token Usage Tracking**
 - Monitor AI API usage
-- Track costs
-- Set usage limits
+- Track costs per endpoint
+- Cost estimation with current Claude pricing
 
 ## Technology Stack
 
 - **Backend:** Django 5.0+ (Python)
 - **Frontend:** Django Templates + Tailwind CSS (MVP)
-- **Database:** SQLite (development), PostgreSQL (production)
-- **AI:** Anthropic Claude API
+- **Database:** SQLite (development), PostgreSQL (production-ready)
+- **AI:** Anthropic Claude API (Haiku for clarifications, Sonnet for responses)
+- **Market Data:** yfinance (Yahoo Finance API wrapper)
 - **Deployment:** Local-first (development server)
 
 ## Quick Start
@@ -83,35 +91,76 @@ python manage.py runserver
 
 ### Windows Setup
 
+**Using PowerShell (Recommended):**
+
 ```powershell
-# 1. Clone the repository (or navigate to project directory)
+# 1. Clone the repository
+git clone https://github.com/jblacketter/picker.git
 cd picker
 
 # 2. Create virtual environment
-python -m venv venv
+python -m venv .venv
 
 # 3. Activate virtual environment
-venv\Scripts\activate
+.venv\Scripts\Activate.ps1
+
+# If you get an execution policy error, run:
+# Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 # 4. Install dependencies
 pip install -r requirements.txt
 
 # 5. Set up environment variables
 copy .env.example .env
-# Edit .env in notepad and add your ANTHROPIC_API_KEY
+notepad .env
+# Add your ANTHROPIC_API_KEY and save
 
-# 6. Run migrations
+# 6. Run database migrations
 python manage.py migrate
 
-# 7. Create superuser (for Django admin)
+# 7. Create superuser (for Django admin access)
 python manage.py createsuperuser
+# Username: admin
+# Email: (your email)
+# Password: (choose a password)
 
-# 8. Run development server
+# 8. Start development server
 python manage.py runserver
 
-# 9. Open browser
-# Navigate to http://localhost:8000
+# 9. Open browser to http://localhost:8000
 ```
+
+**Using Command Prompt (Alternative):**
+
+```cmd
+# 1. Clone and navigate
+git clone https://github.com/jblacketter/picker.git
+cd picker
+
+# 2. Create virtual environment
+python -m venv .venv
+
+# 3. Activate virtual environment
+.venv\Scripts\activate.bat
+
+# 4. Install dependencies
+pip install -r requirements.txt
+
+# 5. Set up environment variables
+copy .env.example .env
+notepad .env
+
+# 6-9. Same as PowerShell steps above
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver
+```
+
+**Windows Notes:**
+- If `python` doesn't work, try `py` or `python3`
+- Make sure Python is added to your PATH during installation
+- Administrator privileges may be required for some operations
+- Use forward slashes (`/`) or escaped backslashes (`\\`) in file paths within Python code
 
 ## Environment Variables
 
@@ -133,34 +182,46 @@ DEBUG=True
 
 ```
 picker/
-├── docs/                   # Project documentation
-│   ├── architecture.md     # System architecture
-│   ├── mvp-plan.md        # Development roadmap
-│   └── tech-decisions.md  # Technical decision log
-├── picker/                # Django project settings
+├── docs/                      # Project documentation
+│   ├── architecture.md        # System architecture
+│   ├── mvp-plan.md           # Development roadmap
+│   ├── tech-decisions.md     # Technical decision log
+│   ├── pre-market-movers-guide.md  # Pre-market movers user guide
+│   └── scanner-feature.md    # Scanner feature documentation
+├── config/                   # Django project settings
 │   ├── settings.py
 │   ├── urls.py
 │   └── wsgi.py
-├── research/              # Research session app
+├── research/                 # Research session app
 │   ├── models.py
 │   ├── views.py
 │   └── templates/
-├── stocks/                # Stock watchlist app
+├── stocks/                   # Stock watchlist app
 │   ├── models.py
 │   ├── views.py
 │   └── templates/
-├── ai_service/           # AI integration layer
-│   ├── claude_service.py
-│   ├── prompt_templates.py
-│   └── models.py
-├── .claude/              # Claude Code configuration
+├── strategies/               # Trading strategies app
+│   ├── models.py            # PreMarketMover model
+│   ├── views.py             # Scanner and research views
+│   ├── stock_data.py        # yfinance integration
+│   └── templates/
+├── ai_service/              # AI integration layer
+│   ├── client_interface.py  # Abstract base class
+│   ├── live_client.py       # Production Claude API client
+│   ├── stub_client.py       # Development mock client
+│   ├── client_factory.py    # Factory pattern for client selection
+│   ├── utils.py             # Token cost calculation
+│   └── models.py            # TokenUsageLog
+├── .claude/                 # Claude Code configuration
 │   ├── settings.json
 │   ├── project-context.md
-│   └── commands/         # Custom slash commands
-├── .env                  # Environment variables (not in git)
-├── .env.example         # Template for .env
-├── requirements.txt     # Python dependencies
-└── manage.py           # Django management script
+│   └── commands/            # Custom slash commands
+├── templates/               # Shared templates
+│   └── base.html           # Base template with navigation
+├── .env                     # Environment variables (not in git)
+├── .env.example            # Template for .env
+├── requirements.txt        # Python dependencies
+└── manage.py              # Django management script
 ```
 
 ## Development Workflow
@@ -239,9 +300,22 @@ Then add to `INSTALLED_APPS` in `settings.py`
 
 ### Clear Database (Start Fresh)
 
+**macOS/Linux:**
 ```bash
 # Delete SQLite database
 rm db.sqlite3
+
+# Run migrations again
+python manage.py migrate
+
+# Create superuser
+python manage.py createsuperuser
+```
+
+**Windows:**
+```powershell
+# Delete SQLite database
+del db.sqlite3
 
 # Run migrations again
 python manage.py migrate
@@ -296,6 +370,31 @@ Get a personalized response including:
 - Add analysis notes
 - Link to related research sessions
 
+### 6. Use Pre-Market Movers Scanner
+
+**Access:** Navigate to **Tools → Pre-Market Movers**
+
+**Workflow:**
+1. **Scan for movers:**
+   - Enter stock symbols (e.g., `AAPL, TSLA, NVDA, AMD, META`)
+   - Click "Scan for Movers"
+   - View real-time price, % change, and volume data
+
+2. **Track interesting stocks:**
+   - Click "+ Track" on stocks with significant movement
+   - Stocks are added to your tracking list
+
+3. **Research the catalyst:**
+   - Click "Research This" on tracked stocks
+   - AI analyzes recent news and provides trading insights
+   - Get sentiment (bullish/bearish/neutral) and key factors
+
+4. **Manage workflow:**
+   - Track status: Identified → Researching → Ready to Trade → Executed
+   - Add notes, entry/exit prices, and P/L tracking
+
+**See:** [Pre-Market Movers Guide](docs/pre-market-movers-guide.md) for detailed instructions
+
 ## Troubleshooting
 
 ### Virtual Environment Issues
@@ -332,34 +431,43 @@ Get a personalized response including:
 
 ## Development Roadmap
 
-### ✅ Phase 1 (MVP) - Current
-- Core research flow
-- Session management
-- Basic watchlist
-- Token tracking
+### ✅ Phase 1 (MVP) - Completed
+- Core research flow with AI clarifications
+- Research session management
+- Stock watchlist
+- Token usage tracking
+- Pre-market movers scanner with real-time data
+- AI-powered news research drill-down
 
-### 🔄 Phase 2 - Planned
-- Pre-market movers tracking
+### 🔄 Phase 2 - In Progress
+- Enhanced market data visualization
 - Fallen angels analysis
-- React frontend
-- Advanced stock analysis tools
+- Pattern recognition for news types
+- Automated scanning features
 
 ### 🔮 Phase 3 - Future
-- MCP server integration
-- Real-time market data
+- React frontend migration
+- MCP server integration for financial data
+- Real-time WebSocket market data
 - Portfolio tracking
-- Technical indicators
+- Technical indicators and charting
 - Mobile app
+- Email/SMS alerts for significant movers
 
 ## Documentation
 
+### Core Documentation
 - [Architecture Overview](docs/architecture.md) - System design and component structure
 - [MVP Development Plan](docs/mvp-plan.md) - Phase-by-phase implementation roadmap
 - [Technical Decisions](docs/tech-decisions.md) - Technology choices and rationale
 - [Data Model](docs/data-model.md) - Database schema and relationships
-- [Claude Client Interface](docs/claude-client-interface.md) - AI abstraction layer design
 - [Implementation Workflow](docs/implementation-workflow.md) - Step-by-step development guide
 - [Project Context](.claude/project-context.md) - Vision, goals, and principles
+
+### Feature Documentation
+- [Pre-Market Movers Guide](docs/pre-market-movers-guide.md) - Complete user guide for pre-market scanner
+- [Scanner Feature](docs/scanner-feature.md) - Technical details of the scanner implementation
+- [Claude Client Interface](docs/claude-client-interface.md) - AI abstraction layer design
 
 ## Contributing
 
@@ -386,6 +494,7 @@ For issues or questions:
 
 ## Acknowledgments
 
-- Powered by [Anthropic Claude](https://www.anthropic.com/)
+- AI powered by [Anthropic Claude](https://www.anthropic.com/)
 - Built with [Django](https://www.djangoproject.com/)
+- Market data via [yfinance](https://github.com/ranaroussi/yfinance)
 - Styled with [Tailwind CSS](https://tailwindcss.com/)
