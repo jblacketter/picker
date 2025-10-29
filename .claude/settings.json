@@ -1,0 +1,10 @@
+{
+  "statusLine": {
+    "enabled": true,
+    "format": "{{workingDirectory}}"
+  },
+  "hooks": {
+    "userPromptSubmit": null,
+    "toolCall": null
+  }
+}

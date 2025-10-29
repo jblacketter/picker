@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Picker - Investment Research Assistant{% endblock %}</title>
+
+    <!-- Tailwind CSS via CDN (for MVP - would use build process in production) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        /* Custom styles */
+        .markdown-content h2 {
+            @apply text-2xl font-bold mt-6 mb-3;
+        }
+        .markdown-content ul {
+            @apply list-disc list-inside mb-4;
+        }
+        .markdown-content p {
+            @apply mb-4;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="{% url 'research:home' %}" class="text-2xl font-bold text-blue-600">
+                            Picker
+                        </a>
+                        <span class="ml-3 text-sm text-gray-500">Investment Research Assistant</span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="{% url 'research:home' %}" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                        Research
+                    </a>
+
+                    <!-- Tools Dropdown -->
+                    <div class="relative group">
+                        <button class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium inline-flex items-center">
+                            Tools
+                            <svg class="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div class="absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                            <div class="py-1">
+                                <a href="{% url 'strategies:pre_market_movers' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <div class="font-medium">Pre-Market Movers</div>
+                                    <div class="text-xs text-gray-500">Track news-driven stocks</div>
+                                </a>
+                                <a href="{% url 'stocks:watchlist' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <div class="font-medium">Watchlist</div>
+                                    <div class="text-xs text-gray-500">Stocks you're tracking</div>
+                                </a>
+                                <!-- Future tools will go here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="{% url 'research:session_list' %}" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                        My Research
+                    </a>
+                    <a href="/admin/" class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium">
+                        Admin
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="text-center text-sm text-gray-500">
+                <p class="mb-2">
+                    <strong>Disclaimer:</strong> This app provides educational research assistance only.
+                    It is NOT financial advice. Always consult with qualified financial advisors before making investment decisions.
+                </p>
+                <p>Picker - Investment Research Assistant</p>
+            </div>
+        </div>
+    </footer>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

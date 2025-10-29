@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}My Research - Picker{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">My Research Sessions</h1>
+        <p class="text-gray-600 mt-2">All your saved investment research and questions.</p>
+    </div>
+
+    {% if sessions %}
+    <div class="space-y-4">
+        {% for session in sessions %}
+        <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition duration-200">
+            <a href="{% url 'research:session_detail' session.id %}" class="block p-6">
+                <div class="flex justify-between items-start mb-3">
+                    <h2 class="text-xl font-semibold text-gray-900 hover:text-blue-600">
+                        {{ session.title }}
+                    </h2>
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+                        {% if session.status == 'completed' %}bg-green-100 text-green-800
+                        {% elif session.status == 'in_progress' %}bg-yellow-100 text-yellow-800
+                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ session.get_status_display }}
+                    </span>
+                </div>
+
+                <p class="text-gray-600 mb-3 line-clamp-2">
+                    {{ session.original_question }}
+                </p>
+
+                <div class="flex items-center justify-between text-sm text-gray-500">
+                    <div class="flex items-center space-x-4">
+                        <span>{{ session.created_at|date:"M d, Y" }}</span>
+                        {% if session.notes.count %}
+                        <span>{{ session.notes.count }} note{{ session.notes.count|pluralize }}</span>
+                        {% endif %}
+                    </div>
+                    <span class="text-blue-600 font-medium">View →</span>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination if needed later -->
+    {% else %}
+    <div class="bg-white rounded-lg shadow-md p-12 text-center">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <h3 class="mt-4 text-lg font-medium text-gray-900">No research sessions yet</h3>
+        <p class="mt-2 text-gray-500">Start by asking an investment question.</p>
+        <div class="mt-6">
+            <a
+                href="{% url 'research:home' %}"
+                class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700"
+            >
+                Ask Your First Question
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

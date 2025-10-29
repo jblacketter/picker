@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}Stock Watchlist - Picker{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Stock Watchlist</h1>
+        <p class="text-gray-600 mt-2">Stocks you're researching and tracking.</p>
+    </div>
+
+    <!-- Add Stock Form -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Add Stock to Watchlist</h2>
+        <form method="post" action="{% url 'stocks:add_to_watchlist' %}" class="flex space-x-4">
+            {% csrf_token %}
+            <div class="flex-1">
+                <input
+                    type="text"
+                    name="symbol"
+                    placeholder="Stock symbol (e.g., AAPL)"
+                    required
+                    pattern="[A-Za-z]{1,5}"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
+                >
+            </div>
+            <div class="flex-1">
+                <input
+                    type="text"
+                    name="company_name"
+                    placeholder="Company name (optional)"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+            </div>
+            <button
+                type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition duration-200"
+            >
+                Add
+            </button>
+        </form>
+    </div>
+
+    {% if stocks %}
+    <!-- Filter Tabs -->
+    <div class="mb-6 border-b border-gray-200">
+        <nav class="-mb-px flex space-x-8">
+            <a href="?status=all" class="{% if not status_filter or status_filter == 'all' %}border-blue-500 text-blue-600{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                All
+            </a>
+            <a href="?status=watching" class="{% if status_filter == 'watching' %}border-blue-500 text-blue-600{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                Watching
+            </a>
+            <a href="?status=researched" class="{% if status_filter == 'researched' %}border-blue-500 text-blue-600{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                Researched
+            </a>
+        </nav>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {% for stock in stocks %}
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex justify-between items-start mb-3">
+                <div>
+                    <h3 class="text-2xl font-bold text-gray-900">{{ stock.symbol }}</h3>
+                    {% if stock.company_name %}
+                    <p class="text-gray-600">{{ stock.company_name }}</p>
+                    {% endif %}
+                </div>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                    {% if stock.status == 'watching' %}bg-blue-100 text-blue-800
+                    {% elif stock.status == 'researched' %}bg-green-100 text-green-800
+                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                    {{ stock.get_status_display }}
+                </span>
+            </div>
+
+            {% if stock.notes %}
+            <div class="mb-3">
+                <p class="text-sm text-gray-700">{{ stock.notes|truncatewords:30 }}</p>
+            </div>
+            {% endif %}
+
+            <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-500">Added {{ stock.added_date|date:"M d, Y" }}</span>
+                <div class="flex space-x-2">
+                    <a href="/admin/stocks/watchlistitem/{{ stock.id }}/change/" class="text-blue-600 hover:text-blue-700">
+                        Edit
+                    </a>
+                    {% if stock.source_session %}
+                    <span class="text-gray-300">|</span>
+                    <a href="{% url 'research:session_detail' stock.source_session.id %}" class="text-blue-600 hover:text-blue-700">
+                        View Session
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="bg-white rounded-lg shadow-md p-12 text-center">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+        <h3 class="mt-4 text-lg font-medium text-gray-900">No stocks in watchlist</h3>
+        <p class="mt-2 text-gray-500">Add stocks above to start tracking your research.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

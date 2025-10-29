@@ -1,0 +1,17 @@
+# Django Framework
+Django>=5.0,<5.1
+
+# AI Integration
+anthropic>=0.18.0
+
+# Environment Variables
+python-decouple>=3.8
+
+# Database (PostgreSQL support for future)
+psycopg2-binary>=2.9.9
+
+# Markdown support for research responses
+markdown>=3.5
+
+# Financial data API
+yfinance>=0.2.36

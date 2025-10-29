@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}Ask a Question - Picker{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <!-- Hero Section -->
+    <div class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-gray-900 mb-4">
+            What would you like to research?
+        </h1>
+        <p class="text-lg text-gray-600">
+            Start with a simple investment question. I'll ask for clarification, then provide focused research and curated resources.
+        </p>
+    </div>
+
+    <!-- Question Form -->
+    <div class="bg-white rounded-lg shadow-md p-8">
+        <form method="post" action="{% url 'research:ask_question' %}">
+            {% csrf_token %}
+
+            <div class="mb-6">
+                <label for="question" class="block text-sm font-medium text-gray-700 mb-2">
+                    Your Investment Question
+                </label>
+                <textarea
+                    id="question"
+                    name="question"
+                    rows="4"
+                    required
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    placeholder="Example: Should I move some of my 401k into bonds for more stability?"
+                >{% if question %}{{ question }}{% endif %}</textarea>
+                <p class="mt-2 text-sm text-gray-500">
+                    Ask about asset allocation, stock picks, retirement strategies, risk management, or any investment topic.
+                </p>
+            </div>
+
+            {% if error %}
+            <div class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+                <p class="text-red-800">{{ error }}</p>
+            </div>
+            {% endif %}
+
+            <button
+                type="submit"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200"
+            >
+                Start Research
+            </button>
+        </form>
+    </div>
+
+    <!-- Example Questions -->
+    <div class="mt-12">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Example Questions</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition">
+                <p class="text-gray-700">"Should I move some of my 401k into bonds?"</p>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition">
+                <p class="text-gray-700">"What AI stocks should I look at for growth?"</p>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition">
+                <p class="text-gray-700">"How much should I allocate to international stocks?"</p>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition">
+                <p class="text-gray-700">"Is now a good time to increase my equity exposure?"</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Sessions -->
+    {% if recent_sessions %}
+    <div class="mt-12">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-gray-900">Recent Research</h2>
+            <a href="{% url 'research:session_list' %}" class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                View All →
+            </a>
+        </div>
+        <div class="space-y-3">
+            {% for session in recent_sessions %}
+            <a href="{% url 'research:session_detail' session.id %}"
+               class="block bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="font-medium text-gray-900">{{ session.title }}</h3>
+                        <p class="text-sm text-gray-500 mt-1">{{ session.created_at|date:"M d, Y" }}</p>
+                    </div>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                        {% if session.status == 'completed' %}bg-green-100 text-green-800
+                        {% elif session.status == 'in_progress' %}bg-yellow-100 text-yellow-800
+                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ session.get_status_display }}
+                    </span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
