@@ -27,6 +27,8 @@ def pre_market_movers(request):
     scan_results = request.session.get('scan_results', None)
     scan_filters = request.session.get('scan_filters', {})
     scan_timestamp = request.session.get('scan_timestamp', None)
+    validation_warnings = request.session.pop('validation_warnings', None)
+    scan_error = request.session.pop('scan_error', None)
 
     # Get API toggle state (default: disabled for safety)
     api_enabled = request.session.get('api_enabled', False)
@@ -59,6 +61,8 @@ def pre_market_movers(request):
         'scan_filters': scan_filters,
         'scan_timestamp': scan_timestamp,
         'api_enabled': api_enabled,
+        'validation_warnings': validation_warnings,
+        'scan_error': scan_error,
     })
 
 
@@ -181,35 +185,57 @@ def scan_movers(request):
         return redirect('strategies:pre_market_movers')
 
     discovery_mode = request.POST.get('discovery_mode', '').lower() == 'true'
+    validation_errors = []
 
     # Get and validate filter parameters
     universe_name = request.POST.get('universe', 'comprehensive')
+
+    # Validate universe name
+    if discovery_mode:
+        from strategies.market_universe import get_market_universe
+        valid_universes = [
+            'comprehensive', 'all', 'sp500', 'sp500_extended', 'nasdaq',
+            'retail', 'etfs', 'ipos', 'short',
+            'biotech', 'semiconductor', 'ev', 'crypto', 'defense',
+            'cloud', 'fintech', 'gaming', 'ecommerce', 'energy',
+            'chinese', 'smallcap'
+        ]
+        if universe_name not in valid_universes:
+            logger.warning(f"Invalid universe name: {universe_name}, using default 'comprehensive'")
+            universe_name = 'comprehensive'
+            validation_errors.append(f"Invalid universe '{universe_name}', using 'comprehensive'")
 
     # Validate threshold (default: 2.5%)
     try:
         threshold = float(request.POST.get('threshold', '2.5'))
         if threshold < 0 or threshold > 100:
+            validation_errors.append(f"Threshold must be between 0-100%, using default 2.5%")
             threshold = 2.5
     except (ValueError, TypeError):
         threshold = 2.5
+        validation_errors.append("Invalid threshold value, using default 2.5%")
         logger.warning(f"Invalid threshold value: {request.POST.get('threshold')}, using default 2.5")
 
     # Validate min_rvol (default: 0 = any)
     try:
         min_rvol = float(request.POST.get('min_rvol', '0'))
         if min_rvol < 0:
+            validation_errors.append("RVOL cannot be negative, using 0")
             min_rvol = 0
     except (ValueError, TypeError):
         min_rvol = 0
+        validation_errors.append("Invalid RVOL value, using default 0")
         logger.warning(f"Invalid min_rvol value: {request.POST.get('min_rvol')}, using default 0")
 
     # Validate max_spread (default: 999 = any)
     try:
         max_spread = float(request.POST.get('max_spread', '999'))
         if max_spread < 0:
+            validation_errors.append("Spread cannot be negative, using 999 (any)")
             max_spread = 999
     except (ValueError, TypeError):
         max_spread = 999
+        validation_errors.append("Invalid spread value, using default 999")
         logger.warning(f"Invalid max_spread value: {request.POST.get('max_spread')}, using default 999")
 
     # Discovery mode: scan market universe
@@ -222,7 +248,26 @@ def scan_movers(request):
         symbols_to_scan = request.POST.get('symbols_to_scan', '').strip()
         if not symbols_to_scan:
             return redirect('strategies:pre_market_movers')
-        symbols = [s.strip().upper() for s in symbols_to_scan.split(',') if s.strip()]
+
+        # Parse and validate symbols
+        symbols = []
+        for s in symbols_to_scan.split(','):
+            symbol = s.strip().upper()
+            if symbol:
+                # Validate symbol format (letters only, 1-5 chars)
+                if symbol.isalpha() and 1 <= len(symbol) <= 5:
+                    symbols.append(symbol)
+                else:
+                    validation_errors.append(f"Invalid symbol format: {symbol} (must be 1-5 letters)")
+
+        # Limit to 50 symbols in manual mode
+        if len(symbols) > 50:
+            validation_errors.append(f"Too many symbols ({len(symbols)}), limited to first 50")
+            symbols = symbols[:50]
+
+        if not symbols:
+            validation_errors.append("No valid symbols provided")
+            return redirect('strategies:pre_market_movers')
 
     # Fetch stock data
     try:
@@ -282,6 +327,14 @@ def scan_movers(request):
         }
         request.session['scan_timestamp'] = timezone.now().isoformat()
         request.session['api_enabled'] = api_enabled  # Explicitly preserve
+
+        # Store validation warnings if any
+        if validation_errors:
+            request.session['validation_warnings'] = validation_errors
+            logger.warning(f"Validation warnings during scan: {validation_errors}")
+        else:
+            request.session.pop('validation_warnings', None)
+
         request.session.modified = True  # Force session save
 
         logger.info(f"Scan complete: {len(results)} results, api_enabled={api_enabled}, session_key={request.session.session_key}")
