@@ -25,8 +25,7 @@ SECRET_KEY = config('SECRET_KEY')
 # Default True for development, MUST set to False in production .env
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
-
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='a1m,172.17.171.190,localhost,127.0.0.1', cast=Csv())
 
 # Application definition
 
