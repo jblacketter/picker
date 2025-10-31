@@ -1,12 +1,15 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+from django.http import JsonResponse
 from .models import PreMarketMover
 from ai_service.client_factory import get_claude_client
 from ai_service.models import TokenUsageLog
 from ai_service.utils import calculate_cost
 from .stock_data import get_stock_data, get_top_movers, format_price, format_percent, format_volume
 from .finnhub_service import get_top_news_article
+from .market_context import get_market_context  # Wave 2 Feature 2.1
+from .vwap_service import calculate_vwap  # Wave 2 Feature 2.2
 import json
 import logging
 
@@ -33,6 +36,16 @@ def pre_market_movers(request):
     # Get API toggle state (default: disabled for safety)
     api_enabled = request.session.get('api_enabled', False)
     logger.info(f"Pre-market movers view loaded: api_enabled={api_enabled}, session_key={request.session.session_key}")
+
+    # Wave 2 Feature 2.1: Fetch market context
+    market_context = get_market_context()
+
+    # Wave 2 Feature 2.2: Calculate VWAP for each tracked mover
+    vwap_data = {}
+    for mover in movers:
+        vwap_result = calculate_vwap(mover.symbol)
+        if vwap_result:
+            vwap_data[mover.id] = vwap_result
 
     # Pagination for scan results
     paginated_results = None
@@ -63,14 +76,22 @@ def pre_market_movers(request):
         'api_enabled': api_enabled,
         'validation_warnings': validation_warnings,
         'scan_error': scan_error,
+        'market_context': market_context,  # Wave 2 Feature 2.1
+        'vwap_data': vwap_data,  # Wave 2 Feature 2.2
     })
+
+
+@login_required
+def add_mover_form_page(request):
+    """Display the form page for manually adding a mover"""
+    return render(request, 'strategies/add_mover_form.html')
 
 
 @login_required
 def add_mover(request):
     """Add a new pre-market mover"""
     if request.method != 'POST':
-        return redirect('strategies:pre_market_movers')
+        return redirect('strategies:add_mover_form_page')
 
     symbol = request.POST.get('symbol', '').strip().upper()
     company_name = request.POST.get('company_name', '').strip()
@@ -205,38 +226,27 @@ def scan_movers(request):
             universe_name = 'comprehensive'
             validation_errors.append(f"Invalid universe '{universe_name}', using 'comprehensive'")
 
-    # Validate threshold (default: 2.5%)
+    # Validate threshold (default: 10%, range: 5-20%)
     try:
-        threshold = float(request.POST.get('threshold', '2.5'))
-        if threshold < 0 or threshold > 100:
-            validation_errors.append(f"Threshold must be between 0-100%, using default 2.5%")
-            threshold = 2.5
+        threshold = float(request.POST.get('threshold', '10'))
+        if threshold < 5 or threshold > 20:
+            validation_errors.append(f"Threshold must be between 5-20%, using default 10%")
+            threshold = 10
     except (ValueError, TypeError):
-        threshold = 2.5
-        validation_errors.append("Invalid threshold value, using default 2.5%")
-        logger.warning(f"Invalid threshold value: {request.POST.get('threshold')}, using default 2.5")
+        threshold = 10
+        validation_errors.append("Invalid threshold value, using default 10%")
+        logger.warning(f"Invalid threshold value: {request.POST.get('threshold')}, using default 10")
 
-    # Validate min_rvol (default: 0 = any)
+    # Validate min_rvol (default: 3x)
     try:
-        min_rvol = float(request.POST.get('min_rvol', '0'))
+        min_rvol = float(request.POST.get('min_rvol', '3'))
         if min_rvol < 0:
-            validation_errors.append("RVOL cannot be negative, using 0")
-            min_rvol = 0
+            validation_errors.append("RVOL cannot be negative, using 3x")
+            min_rvol = 3
     except (ValueError, TypeError):
-        min_rvol = 0
-        validation_errors.append("Invalid RVOL value, using default 0")
-        logger.warning(f"Invalid min_rvol value: {request.POST.get('min_rvol')}, using default 0")
-
-    # Validate max_spread (default: 999 = any)
-    try:
-        max_spread = float(request.POST.get('max_spread', '999'))
-        if max_spread < 0:
-            validation_errors.append("Spread cannot be negative, using 999 (any)")
-            max_spread = 999
-    except (ValueError, TypeError):
-        max_spread = 999
-        validation_errors.append("Invalid spread value, using default 999")
-        logger.warning(f"Invalid max_spread value: {request.POST.get('max_spread')}, using default 999")
+        min_rvol = 3
+        validation_errors.append("Invalid RVOL value, using default 3x")
+        logger.warning(f"Invalid min_rvol value: {request.POST.get('min_rvol')}, using default 3")
 
     # Discovery mode: scan market universe
     if discovery_mode:
@@ -276,21 +286,17 @@ def scan_movers(request):
         # Apply filters
         filtered_stocks = []
         for stock in stocks:
-            # Threshold filter
-            if abs(stock.change_percent) < threshold:
+            # Threshold filter (positive movers only - removed abs())
+            if stock.change_percent < threshold:
                 continue
 
             # RVOL filter
             if min_rvol > 0 and (stock.relative_volume_ratio is None or stock.relative_volume_ratio < min_rvol):
                 continue
 
-            # Spread filter
-            if max_spread < 999 and (stock.spread_percent is None or stock.spread_percent > max_spread):
-                continue
-
             filtered_stocks.append(stock)
 
-        logger.info(f"Discovery scan: {len(filtered_stocks)} movers found after filters (threshold: {threshold}%, RVOL: {min_rvol}x, spread: {max_spread}%)")
+        logger.info(f"Discovery scan: {len(filtered_stocks)} positive movers found after filters (threshold: {threshold}%, RVOL: {min_rvol}x)")
 
         # Convert to dict format for template
         results = []
@@ -323,7 +329,6 @@ def scan_movers(request):
             'universe': universe_name,
             'threshold': threshold,
             'min_rvol': min_rvol,
-            'max_spread': max_spread,
         }
         request.session['scan_timestamp'] = timezone.now().isoformat()
         request.session['api_enabled'] = api_enabled  # Explicitly preserve
@@ -550,4 +555,32 @@ def api_usage(request):
         'today_cost': today_cost,
         'week_cost': week_cost,
         'recent_logs': recent_logs,
+    })
+
+
+# =============================================================================
+# Wave 2 Feature 2.1: Market Context API
+# =============================================================================
+
+@login_required
+def market_context_api(request):
+    """
+    API endpoint for fetching market context data.
+
+    Returns JSON with SPY, QQQ, VIX, futures, and sentiment.
+    Used for auto-refresh of Market Context widget.
+
+    Wave 2 Feature 2.1
+    """
+    context = get_market_context()
+
+    if context is None:
+        return JsonResponse({
+            'error': 'Failed to fetch market data',
+            'success': False
+        }, status=500)
+
+    return JsonResponse({
+        'success': True,
+        'data': context.to_dict()
     })

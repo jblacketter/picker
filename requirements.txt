@@ -25,3 +25,7 @@ dj-database-url>=2.1.0
 
 # Static file serving for production
 whitenoise>=6.6.0
+
+# Phase 3: Caching and Rate Limiting
+redis>=7.0.0
+django-redis>=6.0.0

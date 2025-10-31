@@ -99,6 +99,46 @@ except ImportError:
     }
 
 
+# Caching Configuration (Phase 3)
+# https://docs.djangoproject.com/en/5.0/topics/cache/
+import os
+
+# Try to use Redis if available, fallback to file-based cache
+REDIS_URL = config('REDIS_URL', default=None)
+
+if REDIS_URL:
+    # Production: Use Redis for caching (better performance, multi-process safe)
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': REDIS_URL,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                'SOCKET_CONNECT_TIMEOUT': 5,
+                'SOCKET_TIMEOUT': 5,
+                'CONNECTION_POOL_KWARGS': {
+                    'max_connections': 50,
+                    'retry_on_timeout': True,
+                },
+            },
+            'KEY_PREFIX': 'picker',
+            'TIMEOUT': int(config('CACHE_DEFAULT_TIMEOUT', default=300)),
+        }
+    }
+else:
+    # Development: Use file-based cache (no Redis needed)
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+            'LOCATION': '/tmp/picker_django_cache',
+            'TIMEOUT': int(config('CACHE_DEFAULT_TIMEOUT', default=300)),
+            'OPTIONS': {
+                'MAX_ENTRIES': 1000,
+            }
+        }
+    }
+
+
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 

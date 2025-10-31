@@ -2,11 +2,23 @@
 Stock market data utilities using yfinance
 
 Provides functions for fetching real-time and pre-market stock data.
+
+Phase 3 Enhancements:
+- Rate limiting to prevent "Too Many Requests" errors
+- Caching with 5-minute TTL to reduce API calls
+- API call monitoring for health metrics
 """
 import yfinance as yf
 import logging
+import requests
 from typing import Dict, List, Optional
 from decimal import Decimal
+from time import time
+
+# Phase 3: Import infrastructure utilities
+from .rate_limiter import yfinance_limiter
+from .cache_utils import cached
+from .api_monitoring import yfinance_monitor
 
 logger = logging.getLogger(__name__)
 
@@ -92,9 +104,82 @@ class StockData:
         }
 
 
+@yfinance_limiter
+@cached(ttl_seconds=300, key_prefix='stock_info')
+def _fetch_ticker_info(symbol: str) -> Dict:
+    """
+    Fetch ticker info with rate limiting, caching, and monitoring.
+
+    This is an internal helper that wraps the yfinance API call
+    with all Phase 3 infrastructure (rate limiting, caching, monitoring).
+
+    Args:
+        symbol: Stock ticker symbol
+
+    Returns:
+        Dict of ticker info from yfinance
+
+    Raises:
+        Exception: If API call fails after monitoring
+    """
+    start_time = time()
+
+    try:
+        ticker = yf.Ticker(symbol)
+        info = ticker.info
+
+        # Calculate latency
+        latency_ms = int((time() - start_time) * 1000)
+
+        # Record successful call
+        yfinance_monitor.record_call(
+            success=True,
+            response_code=200,
+            latency_ms=latency_ms
+        )
+
+        return info
+
+    except requests.exceptions.HTTPError as e:
+        # HTTP errors (429, 404, 500, etc.)
+        response_code = e.response.status_code if hasattr(e, 'response') else None
+        latency_ms = int((time() - start_time) * 1000)
+
+        yfinance_monitor.record_call(
+            success=False,
+            response_code=response_code,
+            latency_ms=latency_ms
+        )
+
+        if response_code == 429:
+            logger.warning(
+                f"Rate limited for {symbol}. Consider increasing cache TTL or "
+                f"reducing scan frequency."
+            )
+
+        raise
+
+    except Exception as e:
+        # Other errors (network, timeout, etc.)
+        latency_ms = int((time() - start_time) * 1000)
+
+        yfinance_monitor.record_call(
+            success=False,
+            response_code=None,
+            latency_ms=latency_ms
+        )
+
+        raise
+
+
 def get_stock_data(symbols: List[str]) -> List[StockData]:
     """
-    Fetch stock data for multiple symbols
+    Fetch stock data for multiple symbols with rate limiting and caching.
+
+    Phase 3: Now includes:
+    - Rate limiting (5 calls/second) to prevent 429 errors
+    - Caching (5-minute TTL) to reduce redundant API calls
+    - API monitoring for health metrics
 
     Args:
         symbols: List of stock ticker symbols
@@ -109,8 +194,8 @@ def get_stock_data(symbols: List[str]) -> List[StockData]:
 
     for symbol in symbols:
         try:
-            ticker = yf.Ticker(symbol)
-            info = ticker.info
+            # Fetch ticker info (rate limited, cached, monitored)
+            info = _fetch_ticker_info(symbol)
 
             if info and 'symbol' in info:
                 stock_data = StockData(symbol, info)

@@ -137,16 +137,35 @@ total_cost = prompt_cost + completion_cost
 - When OFF: "🔒 AI Research is DISABLED - Click the toggle to enable AI research for tracked stocks"
 - When ON: "✅ AI Research is ENABLED - Real Claude API active - Use 'Research This' button on tracked stocks"
 
+### Issue 4: NameError from Removed max_spread Reference (Codex Review Fix)
+**Problem:** Phase 1 removed the max_spread filter, but `strategies/views.py:311` still referenced it in `scan_filters` dictionary, causing NameError on every scan.
+
+**Root Cause:**
+- Phase 1 removed max_spread validation and form input (lines 230-239)
+- Phase 1 removed max_spread filtering logic in loop (lines 287-289)
+- **MISSED:** Session storage still tried to save `max_spread` variable that no longer exists
+- Every scan fell into exception handler, returning empty results
+
+**Solution:**
+- Removed `'max_spread': max_spread,` from `scan_filters` dictionary (line 311)
+- Scans now complete successfully without NameError
+
+**Files Changed:**
+- `strategies/views.py` (line 311 removed from scan_filters dictionary)
+
+**Credit:** Bug identified by Codex during Phase 2 review
+
 ---
 
 ## File Inventory - Key Changes
 
 ### Core Functionality
-1. **strategies/views.py** (lines 27-60, 177-287, 409-424)
+1. **strategies/views.py** (lines 27-60, 177-287, 307-311, 409-424)
    - AI toggle state management
    - Session preservation during scan
    - Debug logging
    - Token usage dashboard
+   - **FIX:** Removed max_spread from scan_filters (line 311 - Codex review fix)
 
 2. **strategies/templates/strategies/pre_market_movers.html**
    - Lines 16-48: New AI toggle at top
@@ -459,6 +478,7 @@ Phase 2 is **complete and functional**. The AI research toggle now works reliabl
 
 ---
 
-**Document Version:** 1.0
+**Document Version:** 1.1 (Codex review corrections applied)
 **Last Updated:** October 29, 2025
+**Corrections:** Fixed max_spread NameError bug (views.py:311)
 **Next Review:** After Phase 3 completion or user feedback session

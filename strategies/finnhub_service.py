@@ -5,12 +5,20 @@ Provides functions for:
 - Fetching company news
 - Getting market status (pre-market, regular, after-hours)
 - Real-time quote data
+
+Phase 3 Enhancements:
+- Caching with 15-minute TTL for news (news doesn't change rapidly)
+- API call monitoring for health metrics
 """
 
 import requests
 import logging
 from datetime import datetime, timedelta
 from django.conf import settings
+
+# Phase 3: Import infrastructure utilities
+from .cache_utils import cached
+from .api_monitoring import finnhub_monitor
 
 logger = logging.getLogger(__name__)
 
@@ -46,9 +54,12 @@ class FinnhubClient:
             logger.error(f"Finnhub API request failed: {e}")
             return None
 
+    @cached(ttl_seconds=900, key_prefix='finnhub_news')  # 15-minute cache
     def get_company_news(self, symbol, days_back=7):
         """
-        Fetch recent company news.
+        Fetch recent company news with caching.
+
+        Phase 3: Cached for 15 minutes (news doesn't change rapidly)
 
         Args:
             symbol: Stock ticker symbol (e.g., 'AAPL')
@@ -66,7 +77,13 @@ class FinnhubClient:
             'to': end_date.strftime('%Y-%m-%d')
         }
 
-        data = self._make_request('company-news', params)
+        # Track API call for monitoring
+        try:
+            data = self._make_request('company-news', params)
+            finnhub_monitor.record_call(success=True, response_code=200)
+        except Exception as e:
+            finnhub_monitor.record_call(success=False, response_code=None)
+            raise
 
         if not data:
             return []

@@ -13,6 +13,66 @@
         </p>
     </div>
 
+    <!-- Wave 2 Feature 2.1: Market Context Widget -->
+    {% if market_context %}
+    <div id="market-context-widget" class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
+        <h3 class="text-sm font-semibold mb-3 text-gray-700 dark:text-gray-300">Market Context</h3>
+
+        <div class="grid grid-cols-5 gap-4 text-sm">
+            <!-- SPY -->
+            <div class="text-center">
+                <div class="text-gray-500 dark:text-gray-400 text-xs">SPY</div>
+                <div class="text-lg font-semibold {{ market_context.spy_change|change_color_class }}">
+                    {{ market_context.spy_change|format_percent }}
+                </div>
+                <div class="text-xs text-gray-400 dark:text-gray-500">${{ market_context.spy_price }}</div>
+            </div>
+
+            <!-- QQQ -->
+            <div class="text-center">
+                <div class="text-gray-500 dark:text-gray-400 text-xs">QQQ</div>
+                <div class="text-lg font-semibold {{ market_context.qqq_change|change_color_class }}">
+                    {{ market_context.qqq_change|format_percent }}
+                </div>
+                <div class="text-xs text-gray-400 dark:text-gray-500">${{ market_context.qqq_price }}</div>
+            </div>
+
+            <!-- VIX -->
+            <div class="text-center">
+                <div class="text-gray-500 dark:text-gray-400 text-xs">VIX</div>
+                <div class="text-lg font-semibold text-gray-700 dark:text-gray-300">{{ market_context.vix_level }}</div>
+                <div class="text-xs text-gray-400 dark:text-gray-500">fear index</div>
+            </div>
+
+            <!-- Futures (optional, may be null) -->
+            <div class="text-center">
+                <div class="text-gray-500 dark:text-gray-400 text-xs">ES Futures</div>
+                {% if market_context.es_futures %}
+                <div class="text-lg font-semibold {{ market_context.es_futures|change_color_class }}">
+                    {{ market_context.es_futures|format_percent }}
+                </div>
+                {% else %}
+                <div class="text-lg font-semibold text-gray-400 dark:text-gray-500">N/A</div>
+                {% endif %}
+            </div>
+
+            <!-- Sentiment -->
+            <div class="text-center">
+                <div class="text-gray-500 dark:text-gray-400 text-xs">Sentiment</div>
+                <div class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium
+                    {% if market_context.sentiment_color == 'green' %}bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400{% elif market_context.sentiment_color == 'red' %}bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400{% else %}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300{% endif %}">
+                    {{ market_context.sentiment_emoji }} {{ market_context.market_sentiment|upper }}
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-2 text-xs text-gray-500 dark:text-gray-400 text-right">
+            Updated: <span id="market-context-time">{{ market_context.last_updated|date:"g:i A" }} ET</span> •
+            <span class="text-green-600 dark:text-green-400">●</span> Live
+        </div>
+    </div>
+    {% endif %}
+
     <!-- AI Research Control - Global Toggle -->
     <div class="mb-6 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border-2 {% if api_enabled %}border-green-500 dark:border-green-600{% else %}border-purple-300 dark:border-purple-700{% endif %} rounded-lg p-4">
         <div class="flex items-center justify-between">
@@ -105,7 +165,7 @@
 
             <!-- Filters Section -->
             <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <!-- Universe Filter -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -125,16 +185,17 @@
                     <!-- Threshold Filter -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Min % Change
+                            Min % Change (Positive Only)
                         </label>
                         <select
                             name="threshold"
                             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                         >
-                            <option value="1.0" {% if scan_filters.threshold == 1.0 %}selected{% endif %}>±1.0% (More results)</option>
-                            <option value="2.5" {% if scan_filters.threshold == 2.5 or not scan_filters.threshold %}selected{% endif %}>±2.5% (Recommended)</option>
-                            <option value="5.0" {% if scan_filters.threshold == 5.0 %}selected{% endif %}>±5.0% (Strong movers)</option>
-                            <option value="10.0" {% if scan_filters.threshold == 10.0 %}selected{% endif %}>±10.0% (Extreme movers)</option>
+                            <option value="5.0" {% if scan_filters.threshold == 5.0 %}selected{% endif %}>+5.0% (More results)</option>
+                            <option value="7.5" {% if scan_filters.threshold == 7.5 %}selected{% endif %}>+7.5% (Good movers)</option>
+                            <option value="10.0" {% if scan_filters.threshold == 10.0 or not scan_filters.threshold %}selected{% endif %}>+10.0% ⭐ (Recommended)</option>
+                            <option value="15.0" {% if scan_filters.threshold == 15.0 %}selected{% endif %}>+15.0% (Strong movers)</option>
+                            <option value="20.0" {% if scan_filters.threshold == 20.0 %}selected{% endif %}>+20.0% (Extreme movers)</option>
                         </select>
                     </div>
 
@@ -147,25 +208,12 @@
                             name="min_rvol"
                             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                         >
-                            <option value="0" {% if scan_filters.min_rvol == 0 or not scan_filters.min_rvol %}selected{% endif %}>Any volume</option>
+                            <option value="0" {% if scan_filters.min_rvol == 0 %}selected{% endif %}>Any volume</option>
                             <option value="1.5" {% if scan_filters.min_rvol == 1.5 %}selected{% endif %}>1.5x+ (Above average)</option>
                             <option value="2.0" {% if scan_filters.min_rvol == 2.0 %}selected{% endif %}>2.0x+ (High conviction)</option>
-                            <option value="3.0" {% if scan_filters.min_rvol == 3.0 %}selected{% endif %}>3.0x+ (Strong conviction)</option>
-                        </select>
-                    </div>
-
-                    <!-- Spread Filter -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Max Spread
-                        </label>
-                        <select
-                            name="max_spread"
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                        >
-                            <option value="999" {% if scan_filters.max_spread == 999 or not scan_filters.max_spread %}selected{% endif %}>Any spread</option>
-                            <option value="1.0" {% if scan_filters.max_spread == 1.0 %}selected{% endif %}>< 1.0% (Liquid)</option>
-                            <option value="2.0" {% if scan_filters.max_spread == 2.0 %}selected{% endif %}>< 2.0% (Tradeable)</option>
+                            <option value="3.0" {% if scan_filters.min_rvol == 3.0 or not scan_filters.min_rvol %}selected{% endif %}>3.0x+ ⭐ (Recommended)</option>
+                            <option value="5.0" {% if scan_filters.min_rvol == 5.0 %}selected{% endif %}>5.0x+ (Very strong)</option>
+                            <option value="10.0" {% if scan_filters.min_rvol == 10.0 %}selected{% endif %}>10.0x+ (Extreme)</option>
                         </select>
                     </div>
                 </div>
@@ -183,6 +231,16 @@
                             </svg>
                             <span id="scanButtonText">Scan for Movers</span>
                         </button>
+                        <!-- Manual Add Button -->
+                        <a
+                            href="{% url 'strategies:add_mover_form_page' %}"
+                            class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg transition duration-200 shadow-lg hover:shadow-xl flex items-center"
+                        >
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            <span>Add Manually</span>
+                        </a>
                         <!-- Loading Indicator -->
                         <div id="loadingIndicator" class="hidden flex items-center text-blue-600 dark:text-blue-400">
                             <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -237,7 +295,6 @@
                             <th class="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Change</th>
                             <th class="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Volume</th>
                             <th class="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">RVOL</th>
-                            <th class="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Spread</th>
                             <th class="px-4 py-3 text-center text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pre-Market</th>
                             <th class="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Action</th>
                         </tr>
@@ -267,16 +324,6 @@
                                 <span class="text-base font-medium {% if result.relative_volume_ratio >= 3.0 %}text-orange-600 dark:text-orange-400{% elif result.relative_volume_ratio >= 2.0 %}text-yellow-600 dark:text-yellow-400{% else %}text-gray-700 dark:text-gray-300{% endif %}">
                                     {{ result.relative_volume_ratio|floatformat:2 }}x
                                     {% if result.relative_volume_ratio >= 3.0 %}🔥{% elif result.relative_volume_ratio >= 2.0 %}⚡{% endif %}
-                                </span>
-                                {% else %}
-                                <span class="text-sm text-gray-400">—</span>
-                                {% endif %}
-                            </td>
-                            <td class="px-4 py-3 whitespace-nowrap text-right">
-                                {% if result.spread_percent %}
-                                <span class="text-base {% if result.spread_percent > 2.0 %}text-red-600 dark:text-red-400{% elif result.spread_percent > 1.0 %}text-yellow-600 dark:text-yellow-400{% else %}text-green-600 dark:text-green-400{% endif %}">
-                                    {{ result.spread_percent|floatformat:3 }}%
-                                    {% if result.spread_percent > 2.0 %}⚠️{% endif %}
                                 </span>
                                 {% else %}
                                 <span class="text-sm text-gray-400">—</span>
@@ -339,100 +386,6 @@
         {% endif %}
     </div>
 
-    <!-- Manual Add Mover Form -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6 border border-gray-200 dark:border-gray-700">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-            Manually Add Pre-Market Mover
-            <span class="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">(or use scanner above)</span>
-        </h2>
-        <form method="post" action="{% url 'strategies:add_mover' %}" class="space-y-4">
-            {% csrf_token %}
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Stock Symbol*</label>
-                    <input
-                        type="text"
-                        name="symbol"
-                        required
-                        pattern="[A-Za-z]{1,5}"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
-                        placeholder="AAPL"
-                    >
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
-                    <input
-                        type="text"
-                        name="company_name"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Apple Inc."
-                    >
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Movement %</label>
-                    <input
-                        type="number"
-                        name="movement_percent"
-                        step="0.01"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="5.23"
-                    >
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">News Headline*</label>
-                <textarea
-                    name="news_headline"
-                    rows="2"
-                    required
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Company announces breakthrough product..."
-                ></textarea>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">News Source</label>
-                    <input
-                        type="text"
-                        name="news_source"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Reuters, Bloomberg, etc."
-                    >
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">News URL</label>
-                    <input
-                        type="url"
-                        name="news_url"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="https://..."
-                    >
-                </div>
-            </div>
-
-            <div class="flex items-center space-x-4">
-                <button
-                    type="submit"
-                    name="action"
-                    value="add"
-                    class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition duration-200"
-                >
-                    Add Mover
-                </button>
-                <button
-                    type="submit"
-                    name="action"
-                    value="analyze"
-                    class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-lg transition duration-200"
-                >
-                    Add + Get AI Analysis
-                </button>
-            </div>
-        </form>
-    </div>
-
     <!-- Filter Tabs and Bulk Actions -->
     <div class="mb-6">
         <div class="flex justify-between items-center mb-4">
@@ -483,16 +436,19 @@
                         <span class="text-gray-600 dark:text-gray-400">{{ mover.company_name }}</span>
                         {% endif %}
                         {% if mover.movement_percent %}
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium
-                            {% if mover.movement_percent > 0 %}bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300
-                            {% else %}bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300{% endif %}">
-                            {% if mover.movement_percent > 0 %}+{% endif %}{{ mover.movement_percent }}%
-                        </span>
+                        <div class="inline-flex flex-col items-start">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium
+                                {% if mover.movement_percent > 0 %}bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300
+                                {% else %}bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300{% endif %}">
+                                {% if mover.movement_percent > 0 %}+{% endif %}{{ mover.movement_percent }}%
+                            </span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400 ml-1">from close</span>
+                        </div>
                         {% endif %}
                     </div>
 
                     <!-- Phase 1: Volume Metrics -->
-                    {% if mover.relative_volume_ratio or mover.spread_percent or mover.pre_market_volume %}
+                    {% if mover.relative_volume_ratio or mover.pre_market_volume or vwap_data %}
                     <div class="flex flex-wrap gap-2 mb-3">
                         {% if mover.relative_volume_ratio %}
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded text-sm font-medium
@@ -503,20 +459,20 @@
                             {% if mover.relative_volume_ratio >= 3.0 %}🔥{% elif mover.relative_volume_ratio >= 2.0 %}⚡{% endif %}
                         </span>
                         {% endif %}
-                        {% if mover.spread_percent %}
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded text-sm font-medium
-                            {% if mover.spread_percent > 2.0 %}bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300
-                            {% elif mover.spread_percent > 1.0 %}bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300
-                            {% else %}bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300{% endif %}">
-                            Spread: {{ mover.spread_percent|floatformat:3 }}%
-                            {% if mover.spread_percent > 2.0 %}⚠️{% endif %}
-                        </span>
-                        {% endif %}
                         {% if mover.pre_market_volume %}
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded text-sm font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
                             Vol: {{ mover.pre_market_volume|format_volume }}
                         </span>
                         {% endif %}
+                        <!-- Wave 2 Feature 2.2: VWAP Signal -->
+                        {% with vwap=vwap_data|get_item:mover.id %}
+                        {% if vwap %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded text-sm font-medium border {{ vwap|vwap_signal_color }}" title="Current: ${{ vwap.current_price|floatformat:2 }} | VWAP: ${{ vwap.vwap|floatformat:2 }}">
+                            {{ vwap|vwap_signal_text }}
+                            {% if vwap.signal_strength == 'strong' %}💪{% elif vwap.signal_strength == 'moderate' %}📊{% endif %}
+                        </span>
+                        {% endif %}
+                        {% endwith %}
                     </div>
                     {% endif %}
 
@@ -656,6 +612,122 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+});
+
+// Wave 2 Feature 2.1: Auto-refresh Market Context widget
+document.addEventListener('DOMContentLoaded', function() {
+    const widget = document.getElementById('market-context-widget');
+    if (!widget) return; // Exit if widget not present
+
+    // Helper to format percentage with +/- sign
+    function formatPercent(value) {
+        if (value === null || value === undefined) return 'N/A';
+        const sign = value >= 0 ? '+' : '';
+        return sign + value.toFixed(2) + '%';
+    }
+
+    // Helper to get color class for positive/negative values
+    function getColorClass(value) {
+        if (value === null || value === undefined) return 'text-gray-700 dark:text-gray-300';
+        return value >= 0
+            ? 'text-green-600 dark:text-green-400'
+            : 'text-red-600 dark:text-red-400';
+    }
+
+    // Helper to format time
+    function formatTime(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        }) + ' ET';
+    }
+
+    // Helper to get sentiment badge HTML
+    function getSentimentBadge(sentiment, emoji, sentimentColor) {
+        let bgClass = 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+        if (sentimentColor === 'green') {
+            bgClass = 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+        } else if (sentimentColor === 'red') {
+            bgClass = 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
+        }
+        return `<div class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${bgClass}">
+            ${emoji} ${sentiment.toUpperCase()}
+        </div>`;
+    }
+
+    // Fetch and update market context
+    function updateMarketContext() {
+        fetch('{% url "strategies:market_context_api" %}')
+            .then(response => response.json())
+            .then(result => {
+                if (!result.success || !result.data) {
+                    console.error('Failed to fetch market context:', result.error);
+                    return;
+                }
+
+                const data = result.data;
+
+                // Update SPY
+                const spyChange = widget.querySelector('.grid > div:nth-child(1) .text-lg');
+                const spyPrice = widget.querySelector('.grid > div:nth-child(1) .text-xs');
+                if (spyChange && spyPrice) {
+                    spyChange.textContent = formatPercent(data.spy_change);
+                    spyChange.className = 'text-lg font-semibold ' + getColorClass(data.spy_change);
+                    spyPrice.textContent = '$' + data.spy_price.toFixed(2);
+                }
+
+                // Update QQQ
+                const qqqChange = widget.querySelector('.grid > div:nth-child(2) .text-lg');
+                const qqqPrice = widget.querySelector('.grid > div:nth-child(2) .text-xs');
+                if (qqqChange && qqqPrice) {
+                    qqqChange.textContent = formatPercent(data.qqq_change);
+                    qqqChange.className = 'text-lg font-semibold ' + getColorClass(data.qqq_change);
+                    qqqPrice.textContent = '$' + data.qqq_price.toFixed(2);
+                }
+
+                // Update VIX
+                const vixLevel = widget.querySelector('.grid > div:nth-child(3) .text-lg');
+                if (vixLevel) {
+                    vixLevel.textContent = data.vix_level.toFixed(2);
+                }
+
+                // Update ES Futures
+                const esFutures = widget.querySelector('.grid > div:nth-child(4) .text-lg');
+                if (esFutures) {
+                    if (data.es_futures !== null && data.es_futures !== undefined) {
+                        esFutures.textContent = formatPercent(data.es_futures);
+                        esFutures.className = 'text-lg font-semibold ' + getColorClass(data.es_futures);
+                    } else {
+                        esFutures.textContent = 'N/A';
+                        esFutures.className = 'text-lg font-semibold text-gray-400 dark:text-gray-500';
+                    }
+                }
+
+                // Update Sentiment
+                const sentimentBadge = widget.querySelector('.grid > div:nth-child(5) .inline-flex');
+                if (sentimentBadge) {
+                    sentimentBadge.outerHTML = getSentimentBadge(
+                        data.market_sentiment,
+                        data.sentiment_emoji,
+                        data.sentiment_color
+                    );
+                }
+
+                // Update timestamp
+                const timeSpan = document.getElementById('market-context-time');
+                if (timeSpan) {
+                    timeSpan.textContent = formatTime(data.last_updated);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching market context:', error);
+            });
+    }
+
+    // Refresh every 60 seconds
+    setInterval(updateMarketContext, 60000);
 });
 </script>
 {% endblock %}

@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Pre-Market Mover - Picker{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <div class="flex items-center space-x-4 mb-4">
+            <a href="{% url 'strategies:pre_market_movers' %}" class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+            </a>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Add Pre-Market Mover</h1>
+        </div>
+        <p class="text-lg text-gray-600 dark:text-gray-300">
+            Manually add a stock with news-driven price movement
+        </p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            TIP: Use the <strong>Scan for Movers</strong> feature for automatic discovery
+        </p>
+    </div>
+
+    <!-- Manual Add Form -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 border border-gray-200 dark:border-gray-700">
+        <form method="post" action="{% url 'strategies:add_mover' %}" class="space-y-6">
+            {% csrf_token %}
+
+            <!-- Stock Information -->
+            <div>
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
+                    Stock Information
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Stock Symbol*
+                        </label>
+                        <input
+                            type="text"
+                            name="symbol"
+                            required
+                            pattern="[A-Za-z]{1,5}"
+                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                            placeholder="AAPL"
+                        >
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">1-5 letters</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Company Name
+                        </label>
+                        <input
+                            type="text"
+                            name="company_name"
+                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                            placeholder="Apple Inc."
+                        >
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Optional</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Movement %
+                        </label>
+                        <input
+                            type="number"
+                            name="movement_percent"
+                            step="0.01"
+                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                            placeholder="5.23"
+                        >
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Optional</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- News Information -->
+            <div>
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
+                    News Information
+                </h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            News Headline*
+                        </label>
+                        <textarea
+                            name="news_headline"
+                            rows="3"
+                            required
+                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                            placeholder="Company announces breakthrough product..."
+                        ></textarea>
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">What news is driving this mover?</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                News Source
+                            </label>
+                            <input
+                                type="text"
+                                name="news_source"
+                                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                placeholder="Reuters, Bloomberg, etc."
+                            >
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Optional</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                News URL
+                            </label>
+                            <input
+                                type="url"
+                                name="news_url"
+                                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                placeholder="https://..."
+                            >
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Optional</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                <a
+                    href="{% url 'strategies:pre_market_movers' %}"
+                    class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 font-medium"
+                >
+                    Cancel
+                </a>
+                <div class="flex items-center space-x-4">
+                    <button
+                        type="submit"
+                        name="action"
+                        value="add"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg transition duration-200 shadow-md hover:shadow-lg"
+                    >
+                        Add Mover
+                    </button>
+                    <button
+                        type="submit"
+                        name="action"
+                        value="analyze"
+                        class="bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-8 rounded-lg transition duration-200 shadow-md hover:shadow-lg"
+                    >
+                        Add + Get AI Analysis
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Help Section -->
+    <div class="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+        <h3 class="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2">💡 When to Use Manual Add</h3>
+        <ul class="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+            <li>• You saw a stock moving on your broker platform</li>
+            <li>• You found a news catalyst on Twitter, Reddit, or financial news sites</li>
+            <li>• The automated scanner missed a stock you want to track</li>
+            <li>• You want to track after-hours movers (scanner focuses on pre-market)</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
