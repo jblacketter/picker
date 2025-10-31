@@ -14,6 +14,8 @@ import requests
 from typing import Dict, List, Optional
 from decimal import Decimal
 from time import time
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 # Phase 3: Import infrastructure utilities
 from .rate_limiter import yfinance_limiter
@@ -21,6 +23,75 @@ from .cache_utils import cached
 from .api_monitoring import yfinance_monitor
 
 logger = logging.getLogger(__name__)
+
+
+def is_market_hours() -> bool:
+    """
+    Check if US stock market is currently open (9:30 AM - 4:00 PM ET).
+
+    Uses ET timezone to ensure accurate detection regardless of server location.
+    Excludes weekends.
+
+    Returns:
+        True if market is open, False otherwise
+    """
+    now_et = datetime.now(ZoneInfo('America/New_York'))
+
+    # Check if weekend
+    if now_et.weekday() >= 5:  # Saturday = 5, Sunday = 6
+        return False
+
+    # Market hours: 9:30 AM - 4:00 PM ET
+    market_open = now_et.replace(hour=9, minute=30, second=0, microsecond=0)
+    market_close = now_et.replace(hour=16, minute=0, second=0, microsecond=0)
+
+    return market_open <= now_et <= market_close
+
+
+def is_pre_market_hours() -> bool:
+    """
+    Check if US stock market is in pre-market session (4:00 AM - 9:30 AM ET).
+
+    Uses ET timezone to ensure accurate detection regardless of server location.
+    Excludes weekends.
+
+    Returns:
+        True if in pre-market session, False otherwise
+    """
+    now_et = datetime.now(ZoneInfo('America/New_York'))
+
+    # Check if weekend
+    if now_et.weekday() >= 5:  # Saturday = 5, Sunday = 6
+        return False
+
+    # Pre-market hours: 4:00 AM - 9:30 AM ET
+    pre_market_start = now_et.replace(hour=4, minute=0, second=0, microsecond=0)
+    pre_market_end = now_et.replace(hour=9, minute=30, second=0, microsecond=0)
+
+    return pre_market_start <= now_et < pre_market_end
+
+
+def is_after_hours() -> bool:
+    """
+    Check if US stock market is in after-hours session (4:00 PM - 8:00 PM ET).
+
+    Uses ET timezone to ensure accurate detection regardless of server location.
+    Excludes weekends.
+
+    Returns:
+        True if in after-hours session, False otherwise
+    """
+    now_et = datetime.now(ZoneInfo('America/New_York'))
+
+    # Check if weekend
+    if now_et.weekday() >= 5:  # Saturday = 5, Sunday = 6
+        return False
+
+    # After-hours: 4:00 PM - 8:00 PM ET
+    after_hours_start = now_et.replace(hour=16, minute=0, second=0, microsecond=0)
+    after_hours_end = now_et.replace(hour=20, minute=0, second=0, microsecond=0)
+
+    return after_hours_start <= now_et <= after_hours_end
 
 
 class StockData:
